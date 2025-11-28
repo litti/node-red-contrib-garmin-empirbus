@@ -1,0 +1,151 @@
+<script type="text/x-red" data-template-name="empirbus-switch">
+
+    <style>
+      .empirbus-row { display: flex; align-items: flex-start; gap: 8px; }
+      .empirbus-row input[type="text"], .empirbus-row input[type="number"] { flex: 1; width: 100%; }
+      .empirbus-row label { flex: 0 0 160px; max-width: 160px; white-space: nowrap; padding-top: 7px; }
+      .empirbus-input-wrapper { display: flex; flex-direction: column; flex: 1; }
+      .empirbus-input-wrapper input { flex: 1; }
+      .empirbus-input-wrapper input[type="checkbox"] { flex: 0 0 auto; width: auto; margin-top: 4px; align-self: flex-start; }
+      .empirbus-input-wrapper .help { font-size: 0.85em; opacity: 0.8; margin-top: 2px; }
+      .empirbus-channel-checkbox { flex: 0 0 20px; }
+      .empirbus-channel-id { flex: 0 0 50px; font-weight: bold; opacity: 0.8; text-align: right; display: block; padding-right: 5px; }
+      .empirbus-channel-label { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      .empirbus-channel-row { display: flex; align-items: center; gap: 8px; padding: 3px 0; }
+    </style>
+
+    <div class="form-row empirbus-row">
+      <label for="node-input-name">
+        <i class="fa fa-tag"></i> Name
+      </label>
+      <input type="text" id="node-input-name">
+    </div>
+
+    <div class="form-row empirbus-row">
+      <label for="node-input-config">
+        <i class="fa fa-cog"></i> EmpirBus Config
+      </label>
+      <input type="text" id="node-input-config">
+    </div>
+
+    <div class="form-row empirbus-row">
+      <label for="node-input-channelId">
+        <i class="fa fa-hashtag"></i> Channel ID
+      </label>
+      <div class="empirbus-input-wrapper">
+        <input type="number" id="node-input-channelId" style="width: 100%;">
+        <span class="help">Fallback, wenn keine Checkbox gewählt und kein Name gesetzt ist</span>
+      </div>
+    </div>
+
+    <div class="form-row empirbus-row">
+      <label for="node-input-channelName">
+        <i class="fa fa-font"></i> Channel Name
+      </label>
+      <input type="text" id="node-input-channelName">
+    </div>
+
+    <div class="form-row empirbus-row">
+      <label for="node-input-acknowledge">
+        <i class="fa fa-check"></i> bestätigen
+      </label>
+      <div class="empirbus-input-wrapper">
+        <input type="checkbox" id="node-input-acknowledge">
+        <span class="help">Wenn der Befehl erfolgreich ist, wird acknowledge:true an das msg Objekt gehängt</span>
+      </div>
+    </div>
+
+    <div class="form-row">
+      <label>Kanäle</label>
+      <div id="empirbus-switch-channels"></div>
+      <input type="hidden" id="node-input-channelIds">
+      <span class="help">Auswahl mehrerer Kanäle</span>
+    </div>
+
+</script>
+
+<script type="text/javascript">
+    /* exported oneditprepare, oneditsave */
+    /* global RED */
+    RED.nodes.registerType('empirbus-switch', {
+        category: 'output',
+        color: '#a6bbcf',
+        defaults: {
+            name: { value: '' },
+            config: { value: '', type: 'empirbus-config', required: true },
+            channelId: { value: '', required: false },
+            channelName: { value: '', required: false },
+            channelIds: { value: '', required: false },
+            acknowledge: { value: false }
+        },
+        inputs: 1,
+        outputs: 1,
+        icon: 'bridge.svg',
+        label() {
+            return this.name || "EmpirBus Switch"
+        },
+
+        oneditprepare() {
+            const node = this
+
+            $('#node-input-acknowledge')
+                .prop('checked', !!node.acknowledge)
+
+            const loadChannels = configId => {
+                if (!configId) return
+                const container = $('#empirbus-switch-channels')
+                container.empty()
+
+                $.getJSON('empirbus/' + configId + '/channels', channels => {
+                    const selected = (node.channelIds || '')
+                        .split(',')
+                        .map(s => s.trim())
+                        .filter(s => s.length > 0)
+
+                    channels.forEach(ch => {
+                        const id = String(ch.id)
+                        const row = $('<div/>').addClass('empirbus-channel-row')
+
+                        const checkbox = $('<input type="checkbox">')
+                            .addClass('empirbus-channel-checkbox')
+                            .attr('data-channel-id', id)
+
+                        if (selected.indexOf(id) !== -1) {
+                            checkbox.prop('checked', true)
+                        }
+
+                        const idLabel = $('<span/>')
+                            .addClass('empirbus-channel-id')
+                            .text(id)
+
+                        const labelText = ch.description || ch.name || 'Channel ' + id
+                        const label = $('<span/>')
+                            .addClass('empirbus-channel-label')
+                            .text(labelText)
+
+                        row.append(checkbox).append(idLabel).append(label)
+                        container.append(row)
+                    })
+                })
+            }
+
+            $('#node-input-config').on('change', function () {
+                loadChannels($(this).val())
+            })
+
+            const initialConfig = $('#node-input-config').val()
+            if (initialConfig) loadChannels(initialConfig)
+        },
+
+        oneditsave() {
+            const ids = []
+            $('#empirbus-switch-channels input[type="checkbox"]:checked').each(function () {
+                ids.push($(this).attr('data-channel-id'))
+            })
+            $('#node-input-channelIds').val(ids.join(','))
+
+            const acknowledge = $('#node-input-acknowledge').is(':checked')
+            $('#node-input-acknowledge').val(acknowledge)
+        }
+    })
+</script>

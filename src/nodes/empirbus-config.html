@@ -1,0 +1,31 @@
+<script type="text/x-red" data-template-name="empirbus-config">
+    <div class="form-row">
+      <label for="node-config-input-name">
+        <i class="fa fa-tag"></i> Name
+      </label>
+      <input type="text" id="node-config-input-name">
+    </div>
+
+    <div class="form-row">
+      <label for="node-config-input-url">
+        <i class="fa fa-globe"></i> WebSocket URL
+      </label>
+      <input type="text" id="node-config-input-url" placeholder="ws://192.168.1.1:8888">
+    </div>
+</script>
+
+<script type="text/javascript">
+    /* global RED */
+    RED.nodes.registerType('empirbus-config', {
+        category: 'config',
+        defaults: {
+            name: { value: '' },
+            url: { value: '', required: true }
+        },
+        label() {
+            if (this.name) return this.name
+            if (this.url) return this.url
+            return 'empirbus-config'
+        }
+    })
+</script>
