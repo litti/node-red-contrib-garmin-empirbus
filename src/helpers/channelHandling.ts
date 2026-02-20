@@ -1,6 +1,6 @@
 import { Channel, EmpirBusChannelRepository } from 'garmin-empirbus-ts'
 import type { NodeMessageInFlow } from 'node-red'
-import { EmpirbusToggleAndSwitchNode } from './types/EmpirbusToggleAndSwitchNode'
+import { EmpirbusToggleAndSwitchNode } from '../types/EmpirbusToggleAndSwitchNode'
 
 export const parseChannelIds = (value?: string): number[] => {
     if (!value)

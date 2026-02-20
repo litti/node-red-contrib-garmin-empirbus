@@ -1,7 +1,7 @@
 import { EmpirBusChannelRepository } from 'garmin-empirbus-ts'
 import { SwitchState } from 'garmin-empirbus-ts/dist/infrastructure/repositories/EmpirBus/EmpirBusChannelRepository'
 import type { Node as NodeRedNode, NodeDef, NodeInitializer } from 'node-red'
-import { parseChannelIds, resolveChannelIds } from '../channelHandling'
+import { parseChannelIds, resolveChannelIds } from '../helpers/channelHandling'
 import { EmpirbusConfigNode } from '../types/EmpirbusConfigNode'
 import { EmpirbusToggleAndSwitchNode } from '../types/EmpirbusToggleAndSwitchNode'
 

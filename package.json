@@ -16,7 +16,7 @@
     "copy:html": "copyfiles -u 1 \"src/nodes/**/*.html\" dist "
   },
   "dependencies": {
-    "garmin-empirbus-ts": "..\\garmin-empirbus-ts\\garmin-empirbus-ts-v0.1.9.tgz"
+    "garmin-empirbus-ts": "..\\garmin-empirbus-ts\\garmin-empirbus-ts-v0.1.11.tgz"
   },
   "devDependencies": {
     "@types/node": "^24.10.0",

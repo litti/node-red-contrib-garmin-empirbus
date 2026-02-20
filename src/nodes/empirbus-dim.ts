@@ -1,8 +1,9 @@
-import { DimState, EmpirBusChannelRepository } from 'garmin-empirbus-ts'
+import { DimState } from 'garmin-empirbus-ts'
 import type { NodeDef, NodeInitializer } from 'node-red'
-import { parseChannelIds, resolveChannelIds } from '../channelHandling'
+import { parseChannelIds, resolveChannelIds } from '../helpers/channelHandling'
 import { EmpirbusConfigNode } from '../types/EmpirbusConfigNode'
 import { EmpirbusToggleAndSwitchNode } from '../types/EmpirbusToggleAndSwitchNode'
+import { getRepository } from '../helpers/getRepository'
 
 interface EmpirbusDimNodeDef extends NodeDef {
     acknowledge: boolean
@@ -11,12 +12,6 @@ interface EmpirbusDimNodeDef extends NodeDef {
     channelName?: string
     config: string
     name: string
-}
-
-const getRepository = async (node: EmpirbusToggleAndSwitchNode): Promise<EmpirBusChannelRepository | null> => {
-    if (!node.configNode)
-        return null
-    return node.configNode.getRepository()
 }
 
 const nodeInit: NodeInitializer = RED => {
