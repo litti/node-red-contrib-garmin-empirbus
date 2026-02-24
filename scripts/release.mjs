@@ -13,19 +13,21 @@ const userconfig = resolve(projectRoot, '.npmrc')
 const registry = 'https://registry.npmjs.org/'
 
 const run = (cmd, args, options = {}) => {
-    const result = spawnSync(cmd, args, { stdio: 'inherit', shell: true, ...options })
+    const result = spawnSync(cmd, args, {
+        stdio: 'inherit',
+        shell: true,
+        cwd: projectRoot,
+        ...options
+    })
 
-    if (result.error) {
+    if (result.error)
         throw result.error
-    }
 
-    if (typeof result.status === 'number' && result.status !== 0) {
+    if (typeof result.status === 'number' && result.status !== 0)
         throw new Error(`${cmd} ${args.join(' ')} failed with status ${result.status}`)
-    }
 
-    if (result.signal) {
+    if (result.signal)
         throw new Error(`${cmd} ${args.join(' ')} was terminated by signal ${result.signal}`)
-    }
 }
 
 const runCapture = (cmd, args) => {
@@ -42,12 +44,11 @@ const runCapture = (cmd, args) => {
 
 const ensureCleanGit = () => {
     const status = runCapture('git', ['status', '--porcelain'])
-    if (!status.ok) {
+    if (!status.ok)
         throw new Error('git status failed')
-    }
-    if (status.stdout.trim().length > 0) {
+
+    if (status.stdout.trim().length > 0)
         throw new Error('Git working tree is not clean. Commit or stash your changes first.')
-    }
 }
 
 const bumpVersion = level => {
