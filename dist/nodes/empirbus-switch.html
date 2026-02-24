@@ -64,6 +64,7 @@
 
 </script>
 
+<script src="resources/node-red-contrib-garmin-empirbus/empirbus-editor.js"></script>
 <script type="text/javascript">
     /* exported oneditprepare, oneditsave */
     /* global RED */
@@ -86,66 +87,16 @@
         },
 
         oneditprepare() {
-            const node = this
-
-            $('#node-input-acknowledge')
-                .prop('checked', !!node.acknowledge)
-
-            const loadChannels = configId => {
-                if (!configId) return
-                const container = $('#empirbus-switch-channels')
-                container.empty()
-
-                $.getJSON('empirbus/' + configId + '/channels', channels => {
-                    const selected = (node.channelIds || '')
-                        .split(',')
-                        .map(s => s.trim())
-                        .filter(s => s.length > 0)
-
-                    channels.forEach(ch => {
-                        const id = String(ch.id)
-                        const row = $('<div/>').addClass('empirbus-channel-row')
-
-                        const checkbox = $('<input type="checkbox">')
-                            .addClass('empirbus-channel-checkbox')
-                            .attr('data-channel-id', id)
-
-                        if (selected.indexOf(id) !== -1) {
-                            checkbox.prop('checked', true)
-                        }
-
-                        const idLabel = $('<span/>')
-                            .addClass('empirbus-channel-id')
-                            .text(id)
-
-                        const labelText = ch.description || ch.name || 'Channel ' + id
-                        const label = $('<span/>')
-                            .addClass('empirbus-channel-label')
-                            .text(labelText)
-
-                        row.append(checkbox).append(idLabel).append(label)
-                        container.append(row)
-                    })
-                })
-            }
-
-            $('#node-input-config').on('change', function () {
-                loadChannels($(this).val())
+            EmpirbusEditor.bindConfigChange({
+                node: this,
+                containerSelector: '#empirbus-switch-channels'
             })
-
-            const initialConfig = $('#node-input-config').val()
-            if (initialConfig) loadChannels(initialConfig)
         },
 
         oneditsave() {
-            const ids = []
-            $('#empirbus-switch-channels input[type="checkbox"]:checked').each(function () {
-                ids.push($(this).attr('data-channel-id'))
-            })
-            $('#node-input-channelIds').val(ids.join(','))
-
-            const acknowledge = $('#node-input-acknowledge').is(':checked')
-            $('#node-input-acknowledge').val(acknowledge)
+            EmpirbusEditor.saveSelectedChannelIds(
+                '#empirbus-switch-channels'
+            )
         }
     })
 </script>

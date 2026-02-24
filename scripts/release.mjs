@@ -17,11 +17,15 @@ const run = (cmd, args, options = {}) => {
 }
 
 const runCapture = (cmd, args) => {
-    const result = spawnSync(cmd, args, { encoding: 'utf8' })
-    if (result.status !== 0) {
-        return { ok: false, stdout: result.stdout || '', stderr: result.stderr || '' }
+    const result = spawnSync(cmd, args, { encoding: 'utf8', shell: true })
+    const stdout = (result.stdout || '').trim()
+    const stderr = (result.stderr || '').trim()
+
+    return {
+        ok: result.status === 0,
+        stdout,
+        stderr
     }
-    return { ok: true, stdout: result.stdout || '', stderr: result.stderr || '' }
 }
 
 const ensureCleanGit = () => {
@@ -44,13 +48,12 @@ const build = () => {
 
 const ensureAuth = () => {
     const whoami = runCapture('npm', ['whoami'])
-    if (whoami.ok) return
 
-    if (process.env.NODE_AUTH_TOKEN && process.env.NODE_AUTH_TOKEN.length > 0) {
-        throw new Error('NODE_AUTH_TOKEN is set but npm whoami failed. Token might be invalid for this registry.')
-    }
+    if (whoami.ok)
+        return
 
-    throw new Error('Not logged in to npm. Run `npm login` or set NODE_AUTH_TOKEN.')
+    const details = whoami.stderr || whoami.stdout || 'unknown error'
+    throw new Error(`npm whoami failed: ${details}`)
 }
 
 const publish = () => {

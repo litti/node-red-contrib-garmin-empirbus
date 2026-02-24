@@ -14,7 +14,6 @@ const nodeInit = RED => {
         this.channelId = config.channelId ? Number(config.channelId) : undefined;
         this.channelName = config.channelName || undefined;
         this.channelIds = config.channelIds || '';
-        this.channelIds = config.channelIds || '';
         this.selectedChannelIds = (0, channelHandling_1.parseChannelIds)(this.channelIds);
         if (this.configNode) {
             this.configNode.onState((state) => {
