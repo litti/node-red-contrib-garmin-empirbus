@@ -16,15 +16,31 @@ const nodeInit: NodeInitializer = RED => {
         node.timeout = setTimeout(() => {
             if (node.timeout)
                 clearTimeout(node.timeout)
+            node.timeout = null
             node.repository = connect(node)
         }, 1000)
     }
 
+    function disconnect(node: EmpirbusConfigNode) {
+        const repo = node.repository as unknown as EmpirBusChannelRepository | null
+        if (!repo || typeof repo.disconnect !== 'function')
+            return
+        repo.disconnect()
+    }
+
     function connect(node: EmpirbusConfigNode) {
+
+        disconnect(node)
+
         const repo = new EmpirBusChannelRepository(node.url)
         node.repository = repo
 
         node.log(`Connecting to EmpirBus at ${node.url}`)
+
+        repo.onLog(line => {
+            const text = typeof line === 'string' ? line : JSON.stringify(line)
+            node.log(text)
+        })
 
         repo.onState(state => {
             if (node.timeout) {
@@ -37,10 +53,12 @@ const nodeInit: NodeInitializer = RED => {
                     node.error(`ERROR connecting to EmpirBus at ${node.url}`)
                     scheduleReconnect(node)
                     break
-                default:
                 case EmpirBusClientState.Closed:
                     node.log(`Connection to EmpirBus at ${node.url} closed. Trying to reconnect in 1 second.`)
                     scheduleReconnect(node)
+                    break
+                default:
+                    node.log(`EmpirBus client at ${node.url} gave us the message ${state}, but no handler for this message is defined in the config node.`)
                     break
             }
         })

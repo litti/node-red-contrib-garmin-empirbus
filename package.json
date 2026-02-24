@@ -23,7 +23,7 @@
     "release:major": "node scripts/release.mjs major"
   },
   "dependencies": {
-    "garmin-empirbus-ts": "^0.1.14"
+    "garmin-empirbus-ts": "^0.1.16"
   },
   "devDependencies": {
     "@types/node": "^24.10.0",
