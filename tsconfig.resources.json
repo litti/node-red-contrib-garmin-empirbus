@@ -1,0 +1,11 @@
+{
+  "compilerOptions": {
+    "target": "ES2019",
+    "module": "none",
+    "strict": true,
+    "skipLibCheck": true,
+    "outDir": "resources",
+    "rootDir": "src/resources"
+  },
+  "include": ["src/resources/**/*.ts"]
+}

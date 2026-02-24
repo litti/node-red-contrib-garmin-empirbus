@@ -1,4 +1,4 @@
-<script type="text/x-red" data-template-name="empirbus-dim">
+<script type="text/x-red" data-template-name="empirbus-switch">
 
     <style>
       .empirbus-row { display: flex; align-items: flex-start; gap: 8px; }
@@ -57,7 +57,7 @@
 
     <div class="form-row">
       <label>Kanäle</label>
-      <div id="empirbus-dim-channels"></div>
+      <div id="empirbus-switch-channels"></div>
       <input type="hidden" id="node-input-channelIds">
       <span class="help">Auswahl mehrerer Kanäle</span>
     </div>
@@ -67,7 +67,7 @@
 <script type="text/javascript">
     /* exported oneditprepare, oneditsave */
     /* global RED */
-    RED.nodes.registerType('empirbus-dim', {
+    RED.nodes.registerType('empirbus-switch', {
         category: 'output',
         color: '#a6bbcf',
         defaults: {
@@ -82,7 +82,7 @@
         outputs: 1,
         icon: 'bridge.svg',
         label() {
-            return this.name || "EmpirBus Dim"
+            return this.name || "EmpirBus Switch"
         },
 
         oneditprepare() {
@@ -92,10 +92,8 @@
                 .prop('checked', !!node.acknowledge)
 
             const loadChannels = configId => {
-                if (!configId)
-                    return
-
-                const container = $('#empirbus-dim-channels')
+                if (!configId) return
+                const container = $('#empirbus-switch-channels')
                 container.empty()
 
                 $.getJSON('empirbus/' + configId + '/channels', channels => {
@@ -141,7 +139,7 @@
 
         oneditsave() {
             const ids = []
-            $('#empirbus-dim-channels input[type="checkbox"]:checked').each(function () {
+            $('#empirbus-switch-channels input[type="checkbox"]:checked').each(function () {
                 ids.push($(this).attr('data-channel-id'))
             })
             $('#node-input-channelIds').val(ids.join(','))

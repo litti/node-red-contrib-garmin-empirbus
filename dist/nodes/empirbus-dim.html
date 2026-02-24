@@ -92,9 +92,7 @@
                 .prop('checked', !!node.acknowledge)
 
             const loadChannels = configId => {
-                if (!configId)
-                    return
-
+                if (!configId) return
                 const container = $('#empirbus-dim-channels')
                 container.empty()
 

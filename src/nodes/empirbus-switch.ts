@@ -28,7 +28,6 @@ const nodeInit: NodeInitializer = RED => {
         this.channelId = config.channelId ? Number(config.channelId) : undefined
         this.channelName = config.channelName || undefined
         this.channelIds = config.channelIds || ''
-        this.channelIds = config.channelIds || ''
         this.selectedChannelIds = parseChannelIds(this.channelIds)
 
         if (this.configNode) {
