@@ -81,12 +81,19 @@ const ensureCleanGit = () => {
 }
 
 const ensureAuth = () => {
-    const whoami = runCapture('npm', ['whoami'], { env: npmEnv() })
-    if (whoami.ok)
+    const baseArgs = ['whoami']
+    const base = runCapture('npm', baseArgs, { env: npmEnv() })
+
+    if (base.ok)
         return
 
-    const details = whoami.stderr || whoami.stdout || 'unknown error'
-    throw new Error(`npm whoami failed: ${details}`)
+    const verbose = runCapture('npm', [...baseArgs, '--loglevel', 'verbose'], { env: npmEnv() })
+    const details = [base.stderr, base.stdout, verbose.stderr, verbose.stdout]
+        .map(value => String(value || '').trim())
+        .filter(value => value.length > 0)
+        .join('\n')
+
+    throw new Error(`npm whoami failed:\n${details || 'no output from npm'}`)
 }
 
 const bumpVersion = level => {
