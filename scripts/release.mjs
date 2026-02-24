@@ -10,6 +10,7 @@ const getProjectRoot = () => {
 
 const projectRoot = getProjectRoot()
 const userconfig = resolve(projectRoot, '.npmrc')
+const registry = 'https://registry.npmjs.org/'
 
 const run = (cmd, args, options = {}) => {
     const result = spawnSync(cmd, args, { stdio: 'inherit', shell: true, ...options })
@@ -58,7 +59,7 @@ const build = () => {
 }
 
 const ensureAuth = () => {
-    const whoami = runCapture('npm', ['whoami', '--userconfig', userconfig])
+    const whoami = runCapture('npm', ['whoami', '--userconfig', userconfig, '--registry', registry])
 
     if (whoami.ok)
         return
@@ -68,7 +69,7 @@ const ensureAuth = () => {
 }
 
 const publish = () => {
-    run('npm', ['publish', '--userconfig', userconfig])
+    run('npm', ['publish', '--userconfig', userconfig, '--registry', registry])
 }
 
 const main = () => {
@@ -80,9 +81,9 @@ const main = () => {
     }
 
     ensureCleanGit()
+    ensureAuth()
     bumpVersion(level)
     build()
-    ensureAuth()
     publish()
 }
 
