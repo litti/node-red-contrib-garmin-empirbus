@@ -24,7 +24,7 @@ const shouldRunViaCmdExe = cmd => {
     if (!isWindows())
         return false
 
-    return cmd === 'npm' || cmd === 'yarn' || cmd === 'git'
+    return cmd === 'npm' || cmd === 'yarn'
 }
 
 const normalizeInvocation = (cmd, args) => {
