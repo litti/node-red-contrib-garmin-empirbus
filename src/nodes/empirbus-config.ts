@@ -1,5 +1,6 @@
 import { Channel, EmpirBusChannelRepository, EmpirBusClientState } from 'garmin-empirbus-ts'
 import { NodeDef, NodeInitializer } from 'node-red'
+import { clearTimeout } from 'node:timers'
 import * as util from 'node:util'
 import { EmpirbusConfigNode, OnStateFn } from '../types/EmpirbusConfigNode'
 
@@ -39,17 +40,37 @@ const nodeInit: NodeInitializer = RED => {
         node.log(`Connecting to EmpirBus at ${node.url}`)
 
         repo.onLog(line => {
-            const text = typeof line === 'string' ? line : JSON.stringify(line)
-            node.log(text)
+            if (node.repository !== repo)
+                return
+
+            if (typeof line === 'string') {
+                node.log(line)
+                return
+            }
+
+            const anyLine = line as any
+            if (typeof anyLine.toString === 'function') {
+                node.log(anyLine.toString())
+                return
+            }
+
+            node.log(util.inspect(line, { depth: null, breakLength: 120 }))
         })
 
         repo.onState(state => {
-            if (node.timeout) {
-                clearTimeout(node.timeout)
-                node.timeout = null
-            }
+            if (node.repository !== repo)
+                return
+
             node.onStateFns.forEach(fn => fn(state))
+
             switch (state) {
+                case EmpirBusClientState.Connected:
+                    node.error(`Connected to EmpirBus at ${node.url}.`)
+                    if (node.timeout) {
+                        clearTimeout(node.timeout)
+                        node.timeout = null
+                    }
+                    break
                 case EmpirBusClientState.Error:
                     node.error(`ERROR connecting to EmpirBus at ${node.url}`)
                     scheduleReconnect(node)
