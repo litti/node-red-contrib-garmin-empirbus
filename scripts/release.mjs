@@ -16,40 +16,26 @@ const userconfig = resolve(projectRoot, '.npmrc')
 const isWindows = () => process.platform === 'win32'
 
 const quoteForCmd = value => {
-    const escaped = value.replace(/"/g, '\\"')
+    const escaped = value.replace(/"/g, '""')
     return `"${escaped}"`
 }
 
-const toWindowsCmdInvocation = (cmd, args) => {
+const shouldRunViaCmdExe = cmd => {
+    if (!isWindows())
+        return false
+
+    return cmd === 'npm' || cmd === 'yarn' || cmd === 'git'
+}
+
+const normalizeInvocation = (cmd, args) => {
+    if (!shouldRunViaCmdExe(cmd))
+        return { command: cmd, args }
+
     const cmdline = [cmd, ...args].map(quoteForCmd).join(' ')
     return {
         command: 'cmd.exe',
         args: ['/d', '/s', '/c', cmdline]
     }
-}
-
-const shouldUseCmdExe = cmd => isWindows() && cmd.toLowerCase().endsWith('.cmd')
-
-const resolveCmd = cmd => {
-    if (!isWindows())
-        return cmd
-
-    if (cmd === 'npm')
-        return 'npm.cmd'
-
-    if (cmd === 'yarn')
-        return 'yarn.cmd'
-
-    return cmd
-}
-
-const normalizeInvocation = (cmd, args) => {
-    const resolved = resolveCmd(cmd)
-
-    if (shouldUseCmdExe(resolved))
-        return toWindowsCmdInvocation(resolved, args)
-
-    return { command: resolved, args }
 }
 
 const run = (cmd, args, options = {}) => {
