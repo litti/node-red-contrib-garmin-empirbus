@@ -1,5 +1,6 @@
 import { Channel, EmpirBusChannelRepository, EmpirBusClientState } from 'garmin-empirbus-ts'
 import { NodeDef, NodeInitializer } from 'node-red'
+import * as util from 'node:util'
 import { EmpirbusConfigNode, OnStateFn } from '../types/EmpirbusConfigNode'
 
 interface EmpirbusConfigNodeDef extends NodeDef {
