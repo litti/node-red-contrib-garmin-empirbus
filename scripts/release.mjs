@@ -15,6 +15,21 @@ const userconfig = resolve(projectRoot, '.npmrc')
 
 const isWindows = () => process.platform === 'win32'
 
+const quoteForCmd = value => {
+    const escaped = value.replace(/"/g, '\\"')
+    return `"${escaped}"`
+}
+
+const toWindowsCmdInvocation = (cmd, args) => {
+    const cmdline = [cmd, ...args].map(quoteForCmd).join(' ')
+    return {
+        command: 'cmd.exe',
+        args: ['/d', '/s', '/c', cmdline]
+    }
+}
+
+const shouldUseCmdExe = cmd => isWindows() && cmd.toLowerCase().endsWith('.cmd')
+
 const resolveCmd = cmd => {
     if (!isWindows())
         return cmd
@@ -25,14 +40,22 @@ const resolveCmd = cmd => {
     if (cmd === 'yarn')
         return 'yarn.cmd'
 
-    if (cmd === 'git')
-        return 'git.exe'
-
     return cmd
 }
 
+const normalizeInvocation = (cmd, args) => {
+    const resolved = resolveCmd(cmd)
+
+    if (shouldUseCmdExe(resolved))
+        return toWindowsCmdInvocation(resolved, args)
+
+    return { command: resolved, args }
+}
+
 const run = (cmd, args, options = {}) => {
-    const result = spawnSync(resolveCmd(cmd), args, {
+    const invocation = normalizeInvocation(cmd, args)
+
+    const result = spawnSync(invocation.command, invocation.args, {
         stdio: 'inherit',
         cwd: projectRoot,
         ...options
@@ -49,11 +72,16 @@ const run = (cmd, args, options = {}) => {
 }
 
 const runCapture = (cmd, args, options = {}) => {
-    const result = spawnSync(resolveCmd(cmd), args, {
+    const invocation = normalizeInvocation(cmd, args)
+
+    const result = spawnSync(invocation.command, invocation.args, {
         encoding: 'utf8',
         cwd: projectRoot,
         ...options
     })
+
+    if (result.error)
+        return { ok: false, stdout: '', stderr: String(result.error.message || result.error) }
 
     const stdout = String(result.stdout || '').trim()
     const stderr = String(result.stderr || '').trim()
