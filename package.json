@@ -1,7 +1,7 @@
 {
   "name": "node-red-contrib-garmin-empirbus",
   "license": "MIT",
-  "version": "1.1.5",
+  "version": "1.1.6",
   "description": "Connects to Garmin Empirbus MCU or Serv7 Display to enable status and switching",
   "keywords": [
     "node-red"
