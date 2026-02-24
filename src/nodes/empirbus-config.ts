@@ -63,25 +63,20 @@ const nodeInit: NodeInitializer = RED => {
 
             node.onStateFns.forEach(fn => fn(state))
 
-            switch (state) {
-                case EmpirBusClientState.Connected:
-                    node.error(`Connected to EmpirBus at ${node.url}.`)
-                    if (node.timeout) {
-                        clearTimeout(node.timeout)
-                        node.timeout = null
-                    }
-                    break
-                case EmpirBusClientState.Error:
-                    node.error(`ERROR connecting to EmpirBus at ${node.url}`)
-                    scheduleReconnect(node)
-                    break
-                case EmpirBusClientState.Closed:
-                    node.log(`Connection to EmpirBus at ${node.url} closed. Trying to reconnect in 1 second.`)
-                    scheduleReconnect(node)
-                    break
-                default:
-                    node.log(`EmpirBus client at ${node.url} gave us the message ${state}, but no handler for this message is defined in the config node.`)
-                    break
+            if (state === EmpirBusClientState.Connected && node.timeout) {
+                clearTimeout(node.timeout)
+                node.timeout = null
+            }
+
+            if (state === EmpirBusClientState.Error) {
+                node.error(`ERROR connecting to EmpirBus at ${node.url}`)
+                scheduleReconnect(node)
+                return
+            }
+
+            if (state === EmpirBusClientState.Closed) {
+                node.log(`Connection to EmpirBus at ${node.url} closed. Trying to reconnect in 1 second.`)
+                scheduleReconnect(node)
             }
         })
 
