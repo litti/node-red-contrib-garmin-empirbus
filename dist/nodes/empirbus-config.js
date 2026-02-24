@@ -77,25 +77,18 @@ const nodeInit = RED => {
             if (node.repository !== repo)
                 return;
             node.onStateFns.forEach(fn => fn(state));
-            switch (state) {
-                case garmin_empirbus_ts_1.EmpirBusClientState.Connected:
-                    node.error(`Connected to EmpirBus at ${node.url}.`);
-                    if (node.timeout) {
-                        (0, node_timers_1.clearTimeout)(node.timeout);
-                        node.timeout = null;
-                    }
-                    break;
-                case garmin_empirbus_ts_1.EmpirBusClientState.Error:
-                    node.error(`ERROR connecting to EmpirBus at ${node.url}`);
-                    scheduleReconnect(node);
-                    break;
-                case garmin_empirbus_ts_1.EmpirBusClientState.Closed:
-                    node.log(`Connection to EmpirBus at ${node.url} closed. Trying to reconnect in 1 second.`);
-                    scheduleReconnect(node);
-                    break;
-                default:
-                    node.log(`EmpirBus client at ${node.url} gave us the message ${state}, but no handler for this message is defined in the config node.`);
-                    break;
+            if (state === garmin_empirbus_ts_1.EmpirBusClientState.Connected && node.timeout) {
+                (0, node_timers_1.clearTimeout)(node.timeout);
+                node.timeout = null;
+            }
+            if (state === garmin_empirbus_ts_1.EmpirBusClientState.Error) {
+                node.error(`ERROR connecting to EmpirBus at ${node.url}`);
+                scheduleReconnect(node);
+                return;
+            }
+            if (state === garmin_empirbus_ts_1.EmpirBusClientState.Closed) {
+                node.log(`Connection to EmpirBus at ${node.url} closed. Trying to reconnect in 1 second.`);
+                scheduleReconnect(node);
             }
         });
         repo

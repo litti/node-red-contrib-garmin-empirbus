@@ -11,10 +11,13 @@ interface EmpirbusConfigNodeDef extends NodeDef {
 
 const nodeInit: NodeInitializer = RED => {
     function scheduleReconnect(node: EmpirbusConfigNode) {
-        if (node.timeout) {
-            node.log(`node.timeout not null, return`)
+        const context = node.context()
+        if (context.get('isClosing'))
             return
-        }
+
+        if (node.timeout)
+            return
+
         node.timeout = setTimeout(() => {
             if (node.timeout)
                 clearTimeout(node.timeout)
@@ -117,15 +120,11 @@ const nodeInit: NodeInitializer = RED => {
             const ctx = this.context()
             ctx.set('isClosing', true)
 
-            const timeout = ctx.get('reconnectTimeout') as NodeJS.Timeout | null
-            if (timeout)
-                clearTimeout(timeout)
+            if (this.timeout)
+                clearTimeout(this.timeout)
+            this.timeout = null
 
-            ctx.set('reconnectTimeout', null)
-
-            const repo = this.repository as unknown as { close?: () => void } | null
-            if (repo && typeof repo.close === 'function')
-                repo.close()
+            disconnect(this)
         })
 
         this.onState = (fn: OnStateFn) => {
