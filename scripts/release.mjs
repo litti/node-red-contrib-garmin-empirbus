@@ -1,5 +1,7 @@
 import { spawnSync } from 'node:child_process'
 
+const userconfig = `..\.npmrc`
+
 const run = (cmd, args, options = {}) => {
     const result = spawnSync(cmd, args, { stdio: 'inherit', shell: true, ...options })
 
@@ -47,7 +49,7 @@ const build = () => {
 }
 
 const ensureAuth = () => {
-    const whoami = runCapture('npm', ['whoami'])
+    const whoami = runCapture('npm', ['whoami', '--userconfig', userconfig])
 
     if (whoami.ok)
         return
