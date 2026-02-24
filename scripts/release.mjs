@@ -1,6 +1,15 @@
 import { spawnSync } from 'node:child_process'
+import { resolve, dirname } from 'node:path'
+import { fileURLToPath } from 'node:url'
 
-const userconfig = `..\.npmrc`
+const getProjectRoot = () => {
+    const filename = fileURLToPath(import.meta.url)
+    const scriptsDir = dirname(filename)
+    return resolve(scriptsDir, '..')
+}
+
+const projectRoot = getProjectRoot()
+const userconfig = resolve(projectRoot, '.npmrc')
 
 const run = (cmd, args, options = {}) => {
     const result = spawnSync(cmd, args, { stdio: 'inherit', shell: true, ...options })
@@ -59,7 +68,7 @@ const ensureAuth = () => {
 }
 
 const publish = () => {
-    run('npm', ['publish'])
+    run('npm', ['publish', '--userconfig', userconfig])
 }
 
 const main = () => {
