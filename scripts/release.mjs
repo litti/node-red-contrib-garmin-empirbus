@@ -1,9 +1,18 @@
 import { spawnSync } from 'node:child_process'
 
 const run = (cmd, args, options = {}) => {
-    const result = spawnSync(cmd, args, { stdio: 'inherit', ...options })
-    if (result.status !== 0) {
-        throw new Error(`${cmd} ${args.join(' ')} failed`)
+    const result = spawnSync(cmd, args, { stdio: 'inherit', shell: true, ...options })
+
+    if (result.error) {
+        throw result.error
+    }
+
+    if (typeof result.status === 'number' && result.status !== 0) {
+        throw new Error(`${cmd} ${args.join(' ')} failed with status ${result.status}`)
+    }
+
+    if (result.signal) {
+        throw new Error(`${cmd} ${args.join(' ')} was terminated by signal ${result.signal}`)
     }
 }
 
