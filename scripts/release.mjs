@@ -12,10 +12,27 @@ const projectRoot = getProjectRoot()
 const userconfig = resolve(projectRoot, '.npmrc')
 const registry = 'https://registry.npmjs.org/'
 
+const isWindows = process.platform === 'win32'
+
+const resolveCmd = cmd => {
+    if (!isWindows)
+        return cmd
+
+    if (cmd === 'npm')
+        return 'npm.cmd'
+
+    if (cmd === 'yarn')
+        return 'yarn.cmd'
+
+    if (cmd === 'git')
+        return 'git.exe'
+
+    return cmd
+}
+
 const run = (cmd, args, options = {}) => {
-    const result = spawnSync(cmd, args, {
+    const result = spawnSync(resolveCmd(cmd), args, {
         stdio: 'inherit',
-        shell: true,
         cwd: projectRoot,
         ...options
     })
@@ -31,9 +48,8 @@ const run = (cmd, args, options = {}) => {
 }
 
 const runCapture = (cmd, args, options = {}) => {
-    const result = spawnSync(cmd, args, {
+    const result = spawnSync(resolveCmd(cmd), args, {
         encoding: 'utf8',
-        shell: true,
         cwd: projectRoot,
         ...options
     })
