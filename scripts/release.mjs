@@ -30,10 +30,16 @@ const run = (cmd, args, options = {}) => {
         throw new Error(`${cmd} ${args.join(' ')} was terminated by signal ${result.signal}`)
 }
 
-const runCapture = (cmd, args) => {
-    const result = spawnSync(cmd, args, { encoding: 'utf8', shell: true })
-    const stdout = (result.stdout || '').trim()
-    const stderr = (result.stderr || '').trim()
+const runCapture = (cmd, args, options = {}) => {
+    const result = spawnSync(cmd, args, {
+        encoding: 'utf8',
+        shell: true,
+        cwd: projectRoot,
+        ...options
+    })
+
+    const stdout = String(result.stdout || '').trim()
+    const stderr = String(result.stderr || '').trim()
 
     return {
         ok: result.status === 0,
