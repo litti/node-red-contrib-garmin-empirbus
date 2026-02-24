@@ -2,6 +2,8 @@ import { spawnSync } from 'node:child_process'
 import { resolve, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+const registry = 'https://registry.npmjs.org/'
+
 const getProjectRoot = () => {
     const filename = fileURLToPath(import.meta.url)
     const scriptsDir = dirname(filename)
@@ -10,12 +12,11 @@ const getProjectRoot = () => {
 
 const projectRoot = getProjectRoot()
 const userconfig = resolve(projectRoot, '.npmrc')
-const registry = 'https://registry.npmjs.org/'
 
-const isWindows = process.platform === 'win32'
+const isWindows = () => process.platform === 'win32'
 
 const resolveCmd = cmd => {
-    if (!isWindows)
+    if (!isWindows())
         return cmd
 
     if (cmd === 'npm')
@@ -64,26 +65,23 @@ const runCapture = (cmd, args, options = {}) => {
     }
 }
 
+const npmEnv = () => ({
+    ...process.env,
+    npm_config_userconfig: userconfig,
+    npm_config_registry: registry
+})
+
 const ensureCleanGit = () => {
     const status = runCapture('git', ['status', '--porcelain'])
     if (!status.ok)
         throw new Error('git status failed')
 
-    if (status.stdout.trim().length > 0)
+    if (status.stdout.length > 0)
         throw new Error('Git working tree is not clean. Commit or stash your changes first.')
 }
 
-const bumpVersion = level => {
-    run('npm', ['version', level])
-}
-
-const build = () => {
-    run('yarn', ['build'])
-}
-
 const ensureAuth = () => {
-    const whoami = runCapture('npm', ['whoami', '--userconfig', userconfig, '--registry', registry])
-
+    const whoami = runCapture('npm', ['whoami'], { env: npmEnv() })
     if (whoami.ok)
         return
 
@@ -91,18 +89,30 @@ const ensureAuth = () => {
     throw new Error(`npm whoami failed: ${details}`)
 }
 
-const publish = () => {
-    run('npm', ['publish', '--userconfig', userconfig, '--registry', registry])
+const bumpVersion = level => {
+    run('npm', ['version', level], { env: npmEnv() })
 }
 
-const main = () => {
+const build = () => {
+    run('yarn', ['build'])
+}
+
+const publish = () => {
+    run('npm', ['publish'], { env: npmEnv() })
+}
+
+const getLevel = () => {
     const level = process.argv[2]
     const allowed = new Set(['patch', 'minor', 'major'])
 
-    if (!allowed.has(level)) {
+    if (!allowed.has(level))
         throw new Error('Usage: node scripts/release.mjs <patch|minor|major>')
-    }
 
+    return level
+}
+
+const main = () => {
+    const level = getLevel()
     ensureCleanGit()
     ensureAuth()
     bumpVersion(level)
