@@ -1,4 +1,4 @@
-<script type="text/x-red" data-template-name="empirbus-switch">
+<script type="text/x-red" data-template-name="empirbus-status">
 
     <style>
       .empirbus-row { display: flex; align-items: flex-start; gap: 8px; }
@@ -6,7 +6,6 @@
       .empirbus-row label { flex: 0 0 160px; max-width: 160px; white-space: nowrap; padding-top: 7px; }
       .empirbus-input-wrapper { display: flex; flex-direction: column; flex: 1; }
       .empirbus-input-wrapper input { flex: 1; }
-      .empirbus-input-wrapper input[type="checkbox"] { flex: 0 0 auto; width: auto; margin-top: 4px; align-self: flex-start; }
       .empirbus-input-wrapper .help { font-size: 0.85em; opacity: 0.8; margin-top: 2px; }
       .empirbus-channel-checkbox { flex: 0 0 20px; }
       .empirbus-channel-id { flex: 0 0 50px; font-weight: bold; opacity: 0.8; text-align: right; display: block; padding-right: 5px; }
@@ -42,22 +41,15 @@
       <label for="node-input-channelName">
         <i class="fa fa-font"></i> Channel Name
       </label>
-      <input type="text" id="node-input-channelName">
-    </div>
-
-    <div class="form-row empirbus-row">
-      <label for="node-input-acknowledge">
-        <i class="fa fa-check"></i> bestätigen
-      </label>
       <div class="empirbus-input-wrapper">
-        <input type="checkbox" id="node-input-acknowledge">
-        <span class="help">Wenn der Befehl erfolgreich ist, wird acknowledge:true an das msg Objekt gehängt</span>
+        <input type="text" id="node-input-channelName">
+        <span class="help">Optionaler Filter, wenn keine Checkbox gewählt ist</span>
       </div>
     </div>
 
     <div class="form-row">
       <label>Kanäle</label>
-      <div id="empirbus-switch-channels"></div>
+      <div id="empirbus-status-channels"></div>
       <input type="hidden" id="node-input-channelIds">
       <span class="help">Auswahl mehrerer Kanäle</span>
     </div>
@@ -66,9 +58,7 @@
 
 <script src="resources/node-red-contrib-garmin-empirbus/empirbus-editor.js"></script>
 <script type="text/javascript">
-    /* exported oneditprepare, oneditsave */
-    /* global RED */
-    RED.nodes.registerType('empirbus-switch', {
+    RED.nodes.registerType('empirbus-status', {
         category: 'garmin-empirbus',
         color: '#a6bbcf',
         defaults: {
@@ -76,26 +66,25 @@
             config: { value: '', type: 'empirbus-config', required: true },
             channelId: { value: '', required: false },
             channelName: { value: '', required: false },
-            channelIds: { value: '', required: false },
-            acknowledge: { value: false }
+            channelIds: { value: '', required: false }
         },
-        inputs: 1,
+        inputs: 0,
         outputs: 1,
         icon: 'bridge.svg',
         label() {
-            return this.name || "EmpirBus Switch"
+            return this.name || 'EmpirBus Status'
         },
 
         oneditprepare() {
             EmpirbusEditor.bindConfigChange({
                 node: this,
-                containerSelector: '#empirbus-switch-channels'
+                containerSelector: '#empirbus-status-channels'
             })
         },
 
         oneditsave() {
             EmpirbusEditor.saveSelectedChannelIds(
-                '#empirbus-switch-channels'
+                '#empirbus-status-channels'
             )
         }
     })

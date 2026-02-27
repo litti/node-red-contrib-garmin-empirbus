@@ -5,6 +5,8 @@ import { parseChannelIds, resolveChannelIds } from '../helpers/channelHandling'
 import { EmpirbusConfigNode } from '../types/EmpirbusConfigNode'
 import { EmpirbusToggleAndSwitchNode } from '../types/EmpirbusToggleAndSwitchNode'
 
+type Unsubscribe = () => void
+
 interface EmpirbusSwitchNodeDef extends NodeDef {
     acknowledge: boolean
     channelId?: string
@@ -30,8 +32,10 @@ const nodeInit: NodeInitializer = RED => {
         this.channelIds = config.channelIds || ''
         this.selectedChannelIds = parseChannelIds(this.channelIds)
 
+        let unsubscribeState: Unsubscribe | undefined
+
         if (this.configNode) {
-            this.configNode.onState((state: EmpirBusClientState) => {
+            unsubscribeState = this.configNode.onState((state: EmpirBusClientState) => {
                 switch (state) {
                     case EmpirBusClientState.Connected:
                         this.status({ fill: 'green', shape: 'dot', text: `connected` })
@@ -50,6 +54,11 @@ const nodeInit: NodeInitializer = RED => {
             })
         }
 
+        this.on('close', () => {
+            if (unsubscribeState)
+                unsubscribeState()
+        })
+
         this.on('input', async msg => {
             const repo = await getRepository(this)
             if (!repo) {
@@ -67,6 +76,7 @@ const nodeInit: NodeInitializer = RED => {
             try {
                 const promises = ids.map(id => repo.switch(id, msg.payload as SwitchState))
                 const results = await Promise.all(promises)
+
                 if (results.filter(result => result.hasFailed).length === 0) {
                     if (this.acknowledge) {
                         msg.acknowledge = true
@@ -79,9 +89,9 @@ const nodeInit: NodeInitializer = RED => {
                     this.log(`Switched channels ${ids.join(',')} ${msg.payload}, returning message ${JSON.stringify(msg)}`)
                 }
                 else {
-                    results.filter(result => result.hasFailed).forEach(result => {
-                        this.error(result.errors.join(', '), msg)
-                    })
+                    results
+                        .filter(result => result.hasFailed)
+                        .forEach(result => this.error(result.errors.join(', '), msg))
                 }
 
                 this.send(msg)

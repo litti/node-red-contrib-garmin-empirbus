@@ -10,6 +10,7 @@
     "nodes": {
       "empirbus-config": "dist/nodes/empirbus-config.js",
       "empirbus-dim": "dist/nodes/empirbus-dim.js",
+      "empirbus-state": "dist/nodes/empirbus-state.js",
       "empirbus-switch": "dist/nodes/empirbus-switch.js",
       "empirbus-toggle": "dist/nodes/empirbus-toggle.js"
     }
@@ -23,7 +24,7 @@
     "release:major": "node scripts/release.mjs major"
   },
   "dependencies": {
-    "garmin-empirbus-ts": "^0.1.18"
+    "garmin-empirbus-ts": "^0.1.20"
   },
   "devDependencies": {
     "@types/node": "^24.10.0",

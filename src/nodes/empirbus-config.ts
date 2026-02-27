@@ -4,9 +4,15 @@ import { clearTimeout } from 'node:timers'
 import * as util from 'node:util'
 import { EmpirbusConfigNode, OnStateFn } from '../types/EmpirbusConfigNode'
 
+type Unsubscribe = () => void
+
 interface EmpirbusConfigNodeDef extends NodeDef {
     name: string
     url: string
+}
+
+type NodeWithUnsubscribers = EmpirbusConfigNode & {
+    repoUnsubscribers?: Unsubscribe[]
 }
 
 const nodeInit: NodeInitializer = RED => {
@@ -26,23 +32,35 @@ const nodeInit: NodeInitializer = RED => {
         }, 1000)
     }
 
+    function cleanupRepoSubscriptions(node: EmpirbusConfigNode) {
+        const n = node as NodeWithUnsubscribers
+        const unsubs = n.repoUnsubscribers || []
+        unsubs.forEach(unsub => unsub())
+        n.repoUnsubscribers = []
+    }
+
     function disconnect(node: EmpirbusConfigNode) {
+        cleanupRepoSubscriptions(node)
+
         const repo = node.repository as unknown as EmpirBusChannelRepository | null
         if (!repo || typeof repo.disconnect !== 'function')
             return
+
         repo.disconnect()
     }
 
     function connect(node: EmpirbusConfigNode) {
-
         disconnect(node)
 
         const repo = new EmpirBusChannelRepository(node.url)
         node.repository = repo
 
+        const n = node as NodeWithUnsubscribers
+        n.repoUnsubscribers = []
+
         node.log(`Connecting to EmpirBus at ${node.url}`)
 
-        repo.onLog(line => {
+        const unsubscribeLog = repo.onLog(line => {
             if (node.repository !== repo)
                 return
 
@@ -52,7 +70,7 @@ const nodeInit: NodeInitializer = RED => {
             }
 
             const anyLine = line as any
-            if (typeof anyLine.toString === 'function') {
+            if (typeof anyLine?.toString === 'function') {
                 node.log(anyLine.toString())
                 return
             }
@@ -60,7 +78,7 @@ const nodeInit: NodeInitializer = RED => {
             node.log(util.inspect(line, { depth: null, breakLength: 120 }))
         })
 
-        repo.onState(state => {
+        const unsubscribeState = repo.onState(state => {
             if (node.repository !== repo)
                 return
 
@@ -83,6 +101,8 @@ const nodeInit: NodeInitializer = RED => {
             }
         })
 
+        n.repoUnsubscribers.push(unsubscribeLog, unsubscribeState)
+
         repo
             .connect()
             .then(() => node.log(`Connected to EmpirBus at ${node.url}`))
@@ -92,6 +112,20 @@ const nodeInit: NodeInitializer = RED => {
             })
 
         return repo
+    }
+
+    function addStateListener(node: EmpirbusConfigNode, fn: OnStateFn): Unsubscribe {
+        node.onStateFns.push(fn)
+
+        let isActive = true
+
+        return () => {
+            if (!isActive)
+                return
+
+            isActive = false
+            node.onStateFns = node.onStateFns.filter(x => x !== fn)
+        }
     }
 
     function EmpirbusConfigNodeConstructor(this: EmpirbusConfigNode, config: EmpirbusConfigNodeDef) {
@@ -127,9 +161,7 @@ const nodeInit: NodeInitializer = RED => {
             disconnect(this)
         })
 
-        this.onState = (fn: OnStateFn) => {
-            this.onStateFns.push(fn)
-        }
+        this.onState = (fn: OnStateFn) => addStateListener(this, fn)
     }
 
     RED.nodes.registerType('empirbus-config', EmpirbusConfigNodeConstructor as any)

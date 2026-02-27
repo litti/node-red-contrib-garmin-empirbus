@@ -1,4 +1,4 @@
-import { EmpirBusChannelRepository, EmpirBusClientState } from 'garmin-empirbus-ts'
+import { EmpirBusChannelRepository, EmpirBusClientState, Unsubscribe } from 'garmin-empirbus-ts'
 import { Node as NodeRed } from 'node-red'
 
 export interface EmpirbusConfigNode extends NodeRed {
@@ -6,7 +6,7 @@ export interface EmpirbusConfigNode extends NodeRed {
     url: string
     repository: EmpirBusChannelRepository | null
     getRepository: () => Promise<EmpirBusChannelRepository>
-    onState: (fn: OnStateFn) => void
+    onState: (fn: OnStateFn) => Unsubscribe
     onStateFns: Array<OnStateFn>
     timeout: NodeJS.Timeout | null
 }

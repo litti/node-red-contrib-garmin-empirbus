@@ -37,10 +37,11 @@ const node_timers_1 = require("node:timers");
 const util = __importStar(require("node:util"));
 const nodeInit = RED => {
     function scheduleReconnect(node) {
-        if (node.timeout) {
-            node.log(`node.timeout not null, return`);
+        const context = node.context();
+        if (context.get('isClosing'))
             return;
-        }
+        if (node.timeout)
+            return;
         node.timeout = setTimeout(() => {
             if (node.timeout)
                 (0, node_timers_1.clearTimeout)(node.timeout);
@@ -120,13 +121,10 @@ const nodeInit = RED => {
         this.on('close', () => {
             const ctx = this.context();
             ctx.set('isClosing', true);
-            const timeout = ctx.get('reconnectTimeout');
-            if (timeout)
-                (0, node_timers_1.clearTimeout)(timeout);
-            ctx.set('reconnectTimeout', null);
-            const repo = this.repository;
-            if (repo && typeof repo.close === 'function')
-                repo.close();
+            if (this.timeout)
+                (0, node_timers_1.clearTimeout)(this.timeout);
+            this.timeout = null;
+            disconnect(this);
         });
         this.onState = (fn) => {
             this.onStateFns.push(fn);
