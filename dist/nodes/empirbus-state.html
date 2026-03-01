@@ -1,4 +1,4 @@
-<script type="text/x-red" data-template-name="empirbus-state">
+<script type="text/x-red" data-template-name="empirbus-status">
 
     <style>
       .empirbus-row { display: flex; align-items: flex-start; gap: 8px; }
@@ -49,7 +49,7 @@
 
     <div class="form-row">
       <label>Kanäle</label>
-      <div id="empirbus-state-channels"></div>
+      <div id="empirbus-status-channels"></div>
       <input type="hidden" id="node-input-channelIds">
       <span class="help">Auswahl mehrerer Kanäle</span>
     </div>
@@ -58,8 +58,7 @@
 
 <script src="resources/node-red-contrib-garmin-empirbus/empirbus-editor.js"></script>
 <script type="text/javascript">
-    /* global RED, EmpirbusEditor */
-    RED.nodes.registerType('empirbus-state', {
+    RED.nodes.registerType('empirbus-status', {
         category: 'garmin-empirbus',
         color: '#a6bbcf',
         defaults: {
@@ -73,18 +72,20 @@
         outputs: 1,
         icon: 'bridge.svg',
         label() {
-            return this.name || 'EmpirBus State'
+            return this.name || 'EmpirBus Status'
         },
 
         oneditprepare() {
             EmpirbusEditor.bindConfigChange({
                 node: this,
-                containerSelector: '#empirbus-state-channels'
+                containerSelector: '#empirbus-status-channels'
             })
         },
 
         oneditsave() {
-            EmpirbusEditor.saveSelectedChannelIds('#empirbus-state-channels')
+            EmpirbusEditor.saveSelectedChannelIds(
+                '#empirbus-status-channels'
+            )
         }
     })
 </script>

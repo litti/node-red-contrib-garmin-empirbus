@@ -15,8 +15,9 @@ const nodeInit = RED => {
         this.channelName = config.channelName || undefined;
         this.channelIds = config.channelIds || '';
         this.selectedChannelIds = (0, channelHandling_1.parseChannelIds)(this.channelIds);
+        let unsubscribeState;
         if (this.configNode) {
-            this.configNode.onState((state) => {
+            unsubscribeState = this.configNode.onState((state) => {
                 switch (state) {
                     case garmin_empirbus_ts_1.EmpirBusClientState.Connected:
                         this.status({ fill: 'green', shape: 'dot', text: `connected` });
@@ -34,6 +35,10 @@ const nodeInit = RED => {
                 }
             });
         }
+        this.on('close', () => {
+            if (unsubscribeState)
+                unsubscribeState();
+        });
         this.on('input', async (msg) => {
             const repo = await getRepository(this);
             if (!repo) {
@@ -61,9 +66,9 @@ const nodeInit = RED => {
                     this.log(`Switched channels ${ids.join(',')} ${msg.payload}, returning message ${JSON.stringify(msg)}`);
                 }
                 else {
-                    results.filter(result => result.hasFailed).forEach(result => {
-                        this.error(result.errors.join(', '), msg);
-                    });
+                    results
+                        .filter(result => result.hasFailed)
+                        .forEach(result => this.error(result.errors.join(', '), msg));
                 }
                 this.send(msg);
             }

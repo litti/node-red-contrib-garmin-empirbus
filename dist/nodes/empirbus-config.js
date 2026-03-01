@@ -49,7 +49,14 @@ const nodeInit = RED => {
             node.repository = connect(node);
         }, 1000);
     }
+    function cleanupRepoSubscriptions(node) {
+        const n = node;
+        const unsubs = n.repoUnsubscribers || [];
+        unsubs.forEach(unsub => unsub());
+        n.repoUnsubscribers = [];
+    }
     function disconnect(node) {
+        cleanupRepoSubscriptions(node);
         const repo = node.repository;
         if (!repo || typeof repo.disconnect !== 'function')
             return;
@@ -59,8 +66,10 @@ const nodeInit = RED => {
         disconnect(node);
         const repo = new garmin_empirbus_ts_1.EmpirBusChannelRepository(node.url);
         node.repository = repo;
+        const n = node;
+        n.repoUnsubscribers = [];
         node.log(`Connecting to EmpirBus at ${node.url}`);
-        repo.onLog(line => {
+        const unsubscribeLog = repo.onLog(line => {
             if (node.repository !== repo)
                 return;
             if (typeof line === 'string') {
@@ -68,13 +77,13 @@ const nodeInit = RED => {
                 return;
             }
             const anyLine = line;
-            if (typeof anyLine.toString === 'function') {
+            if (typeof anyLine?.toString === 'function') {
                 node.log(anyLine.toString());
                 return;
             }
             node.log(util.inspect(line, { depth: null, breakLength: 120 }));
         });
-        repo.onState(state => {
+        const unsubscribeState = repo.onState(state => {
             if (node.repository !== repo)
                 return;
             node.onStateFns.forEach(fn => fn(state));
@@ -92,6 +101,7 @@ const nodeInit = RED => {
                 scheduleReconnect(node);
             }
         });
+        n.repoUnsubscribers.push(unsubscribeLog, unsubscribeState);
         repo
             .connect()
             .then(() => node.log(`Connected to EmpirBus at ${node.url}`))
@@ -100,6 +110,16 @@ const nodeInit = RED => {
             scheduleReconnect(node);
         });
         return repo;
+    }
+    function addStateListener(node, fn) {
+        node.onStateFns.push(fn);
+        let isActive = true;
+        return () => {
+            if (!isActive)
+                return;
+            isActive = false;
+            node.onStateFns = node.onStateFns.filter(x => x !== fn);
+        };
     }
     function EmpirbusConfigNodeConstructor(config) {
         RED.nodes.createNode(this, config);
@@ -126,9 +146,7 @@ const nodeInit = RED => {
             this.timeout = null;
             disconnect(this);
         });
-        this.onState = (fn) => {
-            this.onStateFns.push(fn);
-        };
+        this.onState = (fn) => addStateListener(this, fn);
     }
     RED.nodes.registerType('empirbus-config', EmpirbusConfigNodeConstructor);
     RED.httpAdmin.get('/empirbus/:id/channels', async (req, res) => {
