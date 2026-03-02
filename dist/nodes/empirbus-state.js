@@ -1,15 +1,36 @@
 "use strict";
 const garmin_empirbus_ts_1 = require("garmin-empirbus-ts");
-function parseIds(value) {
+const deriveAlexaState_1 = require("../helpers/deriveAlexaState");
+const parseIds = (value) => {
     if (!value)
         return [];
     return Array.from(new Set(value
         .split(',')
         .map(v => Number(v.trim()))
         .filter(v => Number.isFinite(v))));
-}
+};
+const isRelevantChannel = (wantedIds, fallbackId, wantedName, channel) => {
+    if (wantedIds.length > 0)
+        return wantedIds.includes(channel.id);
+    if (fallbackId !== undefined)
+        return channel.id === fallbackId;
+    if (wantedName)
+        return (channel.name || '').toLowerCase() === wantedName;
+    return true;
+};
+const hasChanged = (lastValues, channel) => {
+    const previous = lastValues[channel.id];
+    if (previous === undefined) {
+        lastValues[channel.id] = channel.rawValue;
+        return false;
+    }
+    if (previous === channel.rawValue)
+        return false;
+    lastValues[channel.id] = channel.rawValue;
+    return true;
+};
 const nodeInit = RED => {
-    function EmpirbusStatusNodeConstructor(config) {
+    function EmpirbusStateNodeConstructor(config) {
         RED.nodes.createNode(this, config);
         const configNode = RED.nodes.getNode(config.config);
         const wantedIds = parseIds(config.channelIds);
@@ -34,26 +55,20 @@ const nodeInit = RED => {
             unsubscribeUpdate = repo.onUpdate((channel) => {
                 if (isClosed)
                     return;
-                if (!isRelevantChannel(channel))
+                if (!isRelevantChannel(wantedIds, fallbackId, wantedName, channel))
                     return;
-                const previous = lastValues[channel.id];
-                if (previous === undefined) {
-                    lastValues[channel.id] = channel.rawValue;
+                if (!hasChanged(lastValues, channel))
                     return;
-                }
-                if (previous === channel.rawValue)
-                    return;
-                lastValues[channel.id] = channel.rawValue;
                 context.set('lastValues', lastValues);
+                const state = (0, deriveAlexaState_1.deriveAlexaState)(channel);
+                if (!state)
+                    return;
+                const endpointId = String(channel.id);
                 this.send({
-                    topic: `empirbus/${channel.id}`,
-                    payload: {
-                        id: channel.id,
-                        name: channel.name,
-                        rawValue: channel.rawValue,
-                        decodedValue: channel.decodedValue,
-                        updatedAt: channel.updatedAt
-                    }
+                    acknowledge: true,
+                    endpointId,
+                    topic: `empirbus/${endpointId}`,
+                    payload: { state }
                 });
             });
             unsubscribeState = repo.onState((state) => {
@@ -87,17 +102,8 @@ const nodeInit = RED => {
                 unsubscribeState();
             this.status({});
         });
-        const isRelevantChannel = (channel) => {
-            if (wantedIds.length > 0)
-                return wantedIds.includes(channel.id);
-            if (fallbackId !== undefined)
-                return channel.id === fallbackId;
-            if (wantedName)
-                return (channel.name || '').toLowerCase() === wantedName;
-            return true;
-        };
     }
-    RED.nodes.registerType('empirbus-status', EmpirbusStatusNodeConstructor);
+    RED.nodes.registerType('empirbus-state', EmpirbusStateNodeConstructor);
 };
 module.exports = nodeInit;
 //# sourceMappingURL=empirbus-state.js.map
