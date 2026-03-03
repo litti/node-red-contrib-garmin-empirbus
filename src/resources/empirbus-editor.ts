@@ -1,262 +1,237 @@
-type Channel = {
-    id: string | number
-    name?: string
-    description?: string
-}
-
-type BindOptions = {
-    node: {
-        channelIds?: string
-        acknowledge?: boolean
-    }
-    containerSelector: string
-}
-
-type LoadOptions = {
-    configId: string | undefined
-    containerSelector: string
-    selectedIds: string[]
-}
-
-type ControlsSelectors = {
-    masterCheckboxSelector: string
-    filterInputSelector: string
-}
-
-const controlsSelectors: ControlsSelectors = {
-    masterCheckboxSelector: '.empirbus-channel-master-checkbox',
-    filterInputSelector: '.empirbus-channel-filter-input'
-}
-
-const toSelectedIds = (value?: string): string[] =>
-    String(value || '')
-        .split(',')
-        .map(entry => entry.trim())
-        .filter(Boolean)
-
-const createCheckbox = (id: string, checked: boolean): JQuery =>
-    $('<input type="checkbox">')
-        .addClass('empirbus-channel-checkbox')
-        .attr('data-channel-id', id)
-        .prop('checked', checked)
-
-const createRow = (
-    channel: Channel,
-    selectedIds: string[]
-): JQuery => {
-    const id = String(channel.id)
-    const labelText =
-        channel.description ||
-        channel.name ||
-        `Channel ${id}`
-
-    const row = $('<div/>').addClass('empirbus-channel-row')
-
-    const checkbox = createCheckbox(id, selectedIds.includes(id))
-
-    const idLabel = $('<span/>')
-        .addClass('empirbus-channel-id')
-        .text(id)
-
-    const label = $('<span/>')
-        .addClass('empirbus-channel-label')
-        .text(labelText)
-
-    row.append(checkbox).append(idLabel).append(label)
-
-    return row
-}
-
-const createControls = (): JQuery => {
-    const controls = $('<div/>').addClass('empirbus-channel-controls')
-
-    const masterLabel = $('<label/>').addClass('empirbus-channel-master')
-
-    const masterCheckbox = $('<input type="checkbox">')
-        .addClass('empirbus-channel-master-checkbox')
-
-    const masterText = $('<span/>')
-        .addClass('empirbus-channel-master-label')
-        .text('Alle')
-
-    masterLabel.append(masterCheckbox).append(masterText)
-
-    const filterInput = $('<input type="text">')
-        .addClass('empirbus-channel-filter-input')
-        .attr('placeholder', 'Filtern…')
-        .attr('autocomplete', 'off')
-
-    controls.append(masterLabel).append(filterInput)
-
-    return controls
-}
-
-const getVisibleChannelCheckboxes = (
-    containerSelector: string
-): JQuery =>
-    $(
-        `${containerSelector} .empirbus-channel-row:visible input.empirbus-channel-checkbox`
-    )
-
-const setMasterCheckboxState = (
-    containerSelector: string
-): void => {
-    const master = $(
-        `${containerSelector} ${controlsSelectors.masterCheckboxSelector}`
-    ).get(0) as HTMLInputElement | undefined
-
-    if (!master)
-        return
-
-    const visibleCheckboxes = getVisibleChannelCheckboxes(containerSelector)
-
-    if (visibleCheckboxes.length === 0) {
-        master.checked = false
-        master.indeterminate = false
-        return
+(() => {
+    type Channel = {
+        id: string | number
+        name?: string
+        description?: string
     }
 
-    const checkedCount = visibleCheckboxes.filter(':checked').length
+    type BindOptions = {
+        node: {
+            channelIds?: string
+            acknowledge?: boolean
+        }
+        containerSelector: string
+    }
 
-    master.checked = checkedCount === visibleCheckboxes.length
-    master.indeterminate = checkedCount > 0 && checkedCount < visibleCheckboxes.length
-}
+    type LoadOptions = {
+        configId: string | undefined
+        containerSelector: string
+        selectedIds: string[]
+    }
 
-const applyFilter = (
-    containerSelector: string,
-    filterValue: string
-): void => {
-    const query = filterValue.trim().toLowerCase()
+    type ControlsSelectors = {
+        masterCheckboxSelector: string
+        filterInputSelector: string
+    }
 
-    $(`${containerSelector} .empirbus-channel-row`).each(function () {
-        const row = $(this)
-        const searchableText = row.text().toLowerCase()
-        const matches = query.length === 0 || searchableText.includes(query)
-        row.toggle(matches)
-    })
+    const controlsSelectors: ControlsSelectors = {
+        masterCheckboxSelector: '.empirbus-channel-master-checkbox',
+        filterInputSelector: '.empirbus-channel-filter-input'
+    }
 
-    setMasterCheckboxState(containerSelector)
-}
+    const toSelectedIds = (value?: string): string[] =>
+        String(value || '')
+            .split(',')
+            .map(entry => entry.trim())
+            .filter(Boolean)
 
-const bindControls = (containerSelector: string): void => {
-    const masterSelector = `${containerSelector} ${controlsSelectors.masterCheckboxSelector}`
-    const filterSelector = `${containerSelector} ${controlsSelectors.filterInputSelector}`
+    const createCheckbox = (id: string, checked: boolean): JQuery =>
+        $('<input type="checkbox">')
+            .addClass('empirbus-channel-checkbox')
+            .attr('data-channel-id', id)
+            .prop('checked', checked)
 
-    $(containerSelector)
-        .off('change.empirbus', 'input.empirbus-channel-checkbox')
-        .on('change.empirbus', 'input.empirbus-channel-checkbox', () =>
-            setMasterCheckboxState(containerSelector)
-        )
+    const createRow = (channel: Channel, selectedIds: string[]): JQuery => {
+        const id = String(channel.id)
+        const labelText =
+            channel.description ||
+            channel.name ||
+            `Channel ${id}`
 
-    $(masterSelector)
-        .off('change.empirbus')
-        .on('change.empirbus', function () {
-            const shouldCheck = $(this).is(':checked')
-            const visibleCheckboxes = getVisibleChannelCheckboxes(containerSelector)
-            visibleCheckboxes.prop('checked', shouldCheck)
-            setMasterCheckboxState(containerSelector)
-        })
+        const row = $('<div/>').addClass('empirbus-channel-row')
 
-    $(filterSelector)
-        .off('input.empirbus')
-        .on('input.empirbus', function () {
-            applyFilter(containerSelector, String($(this).val() || ''))
-        })
+        const checkbox = createCheckbox(id, selectedIds.includes(id))
 
-    setMasterCheckboxState(containerSelector)
-}
+        const idLabel = $('<span/>')
+            .addClass('empirbus-channel-id')
+            .text(id)
 
-const renderChannels = (
-    containerSelector: string,
-    channels: Channel[],
-    selectedIds: string[]
-): void => {
-    const container = $(containerSelector)
-    container.empty()
+        const label = $('<span/>')
+            .addClass('empirbus-channel-label')
+            .text(labelText)
 
-    container.append(createControls())
+        row.append(checkbox).append(idLabel).append(label)
 
-    channels.forEach(channel => {
-        container.append(createRow(channel, selectedIds))
-    })
+        return row
+    }
 
-    bindControls(containerSelector)
-}
+    const createControls = (): JQuery => {
+        const controls = $('<div/>').addClass('empirbus-channel-controls')
 
-const loadChannels = ({
-                          configId,
-                          containerSelector,
-                          selectedIds
-                      }: LoadOptions): void => {
-    if (!configId)
-        return
+        const masterLabel = $('<label/>').addClass('empirbus-channel-master')
 
-    $.getJSON(
-        `empirbus/${configId}/channels`,
-        (channels: Channel[]) =>
-            renderChannels(
-                containerSelector,
-                channels,
-                selectedIds
-            )
-    )
-}
+        const masterCheckbox = $('<input type="checkbox">')
+            .addClass('empirbus-channel-master-checkbox')
 
-const saveSelectedChannelIds = (
-    containerSelector: string
-): void => {
-    const ids: string[] = []
+        const masterText = $('<span/>')
+            .addClass('empirbus-channel-master-label')
+            .text('Alle')
 
-    $(
-        `${containerSelector} input[type="checkbox"]:checked`
-    ).each(function () {
-        const id = $(this).attr('data-channel-id')
-        if (id)
-            ids.push(id)
-    })
+        masterLabel.append(masterCheckbox).append(masterText)
 
-    $('#node-input-channelIds').val(ids.join(','))
+        const filterInput = $('<input type="text">')
+            .addClass('empirbus-channel-filter-input')
+            .attr('placeholder', 'Filtern…')
+            .attr('autocomplete', 'off')
 
-    const acknowledge =
-        $('#node-input-acknowledge').is(':checked')
+        controls.append(masterLabel).append(filterInput)
 
-    $('#node-input-acknowledge').val(
-        acknowledge ? 'true' : 'false'
-    )
-}
+        return controls
+    }
 
-const bindConfigChange = ({
-                              node,
-                              containerSelector
-                          }: BindOptions): void => {
-        const refresh = (): void => {
-            const configId = String(
-                $('#node-input-config').val() || ''
-            )
+    const getVisibleChannelCheckboxes = (containerSelector: string): JQuery =>
+        $(`${containerSelector} .empirbus-channel-row:visible input.empirbus-channel-checkbox`)
 
-            loadChannels({
-                configId,
-                containerSelector,
-                selectedIds: toSelectedIds(node.channelIds)
-            })
+    const setMasterCheckboxState = (containerSelector: string): void => {
+        const master = $(
+            `${containerSelector} ${controlsSelectors.masterCheckboxSelector}`
+        ).get(0) as HTMLInputElement | undefined
+
+        if (!master)
+            return
+
+        const visibleCheckboxes = getVisibleChannelCheckboxes(containerSelector)
+
+        if (visibleCheckboxes.length === 0) {
+            master.checked = false
+            master.indeterminate = false
+            return
         }
 
-        $('#node-input-acknowledge').prop(
-            'checked',
-            !!node.acknowledge
+        const checkedCount = visibleCheckboxes.filter(':checked').length
+
+        master.checked = checkedCount === visibleCheckboxes.length
+        master.indeterminate = checkedCount > 0 && checkedCount < visibleCheckboxes.length
+    }
+
+    const applyFilter = (containerSelector: string, filterValue: string): void => {
+        const query = filterValue.trim().toLowerCase()
+
+        $(`${containerSelector} .empirbus-channel-row`).each(function () {
+            const row = $(this)
+            const searchableText = row.text().toLowerCase()
+            const matches = query.length === 0 || searchableText.includes(query)
+            row.toggle(matches)
+        })
+
+        setMasterCheckboxState(containerSelector)
+    }
+
+    const bindControls = (containerSelector: string): void => {
+        const masterSelector = `${containerSelector} ${controlsSelectors.masterCheckboxSelector}`
+        const filterSelector = `${containerSelector} ${controlsSelectors.filterInputSelector}`
+
+        $(containerSelector)
+            .off('change.empirbus', 'input.empirbus-channel-checkbox')
+            .on('change.empirbus', 'input.empirbus-channel-checkbox', () =>
+                setMasterCheckboxState(containerSelector)
+            )
+
+        $(masterSelector)
+            .off('change.empirbus')
+            .on('change.empirbus', function () {
+                const shouldCheck = $(this).is(':checked')
+                const visibleCheckboxes = getVisibleChannelCheckboxes(containerSelector)
+                visibleCheckboxes.prop('checked', shouldCheck)
+                setMasterCheckboxState(containerSelector)
+            })
+
+        $(filterSelector)
+            .off('input.empirbus')
+            .on('input.empirbus', function () {
+                applyFilter(containerSelector, String($(this).val() || ''))
+            })
+
+        setMasterCheckboxState(containerSelector)
+    }
+
+    const renderChannels = (
+        containerSelector: string,
+        channels: Channel[],
+        selectedIds: string[]
+    ): void => {
+        const container = $(containerSelector)
+        container.empty()
+
+        container.append(createControls())
+
+        channels.forEach(channel => {
+            container.append(createRow(channel, selectedIds))
+        })
+
+        bindControls(containerSelector)
+    }
+
+    const loadChannels = ({
+                              configId,
+                              containerSelector,
+                              selectedIds
+                          }: LoadOptions): void => {
+        if (!configId)
+            return
+
+        $.getJSON(
+            `empirbus/${configId}/channels`,
+            (channels: Channel[]) =>
+                renderChannels(
+                    containerSelector,
+                    channels,
+                    selectedIds
+                )
         )
-
-        $('#node-input-config').on('change', refresh)
-
-        refresh()
     }
 
-;(window as unknown as {
-    EmpirbusEditor: {
-        bindConfigChange: typeof bindConfigChange
-        saveSelectedChannelIds: typeof saveSelectedChannelIds
+    const saveSelectedChannelIds = (containerSelector: string): void => {
+        const ids: string[] = []
+
+        $(`${containerSelector} input[type="checkbox"]:checked`).each(function () {
+            const id = $(this).attr('data-channel-id')
+            if (id)
+                ids.push(id)
+        })
+
+        $('#node-input-channelIds').val(ids.join(','))
+
+        const acknowledge = $('#node-input-acknowledge').is(':checked')
+
+        $('#node-input-acknowledge').val(acknowledge ? 'true' : 'false')
     }
-}).EmpirbusEditor = {
-    bindConfigChange,
-    saveSelectedChannelIds
-}
+
+    const bindConfigChange = ({ node, containerSelector }: BindOptions): void => {
+            const refresh = (): void => {
+                const configId = String($('#node-input-config').val() || '')
+
+                loadChannels({
+                    configId,
+                    containerSelector,
+                    selectedIds: toSelectedIds(node.channelIds)
+                })
+            }
+
+            $('#node-input-acknowledge').prop('checked', !!node.acknowledge)
+
+            $('#node-input-config').on('change', refresh)
+
+            refresh()
+        }
+
+    ;(window as unknown as {
+        EmpirbusEditor: {
+            bindConfigChange: typeof bindConfigChange
+            saveSelectedChannelIds: typeof saveSelectedChannelIds
+        }
+    }).EmpirbusEditor = {
+        bindConfigChange,
+        saveSelectedChannelIds
+    }
+})()
