@@ -1,6 +1,7 @@
 import { EmpirBusChannelRepository, EmpirBusClientState } from 'garmin-empirbus-ts'
 import { SwitchState } from 'garmin-empirbus-ts/dist/infrastructure/repositories/EmpirBus/EmpirBusChannelRepository'
 import type { NodeDef, NodeInitializer } from 'node-red'
+import { bindEmpirbusClientStatus } from '../helpers/bindEmpirbusClientStatus'
 import { parseChannelIds, resolveChannelIds } from '../helpers/channelHandling'
 import { EmpirbusConfigNode } from '../types/EmpirbusConfigNode'
 import { EmpirbusToggleAndSwitchNode } from '../types/EmpirbusToggleAndSwitchNode'
@@ -32,31 +33,10 @@ const nodeInit: NodeInitializer = RED => {
         this.channelIds = config.channelIds || ''
         this.selectedChannelIds = parseChannelIds(this.channelIds)
 
-        let unsubscribeState: Unsubscribe | undefined
-
-        if (this.configNode) {
-            unsubscribeState = this.configNode.onState((state: EmpirBusClientState) => {
-                switch (state) {
-                    case EmpirBusClientState.Connected:
-                        this.status({ fill: 'green', shape: 'dot', text: `connected` })
-                        break
-                    case EmpirBusClientState.Error:
-                        this.status({ fill: 'red', shape: 'dot', text: `ERROR` })
-                        break
-                    case EmpirBusClientState.Connecting:
-                        this.status({ fill: 'red', shape: 'ring', text: `connecting` })
-                        break
-                    default:
-                    case EmpirBusClientState.Closed:
-                        this.status({ fill: 'red', shape: 'ring', text: `disconnected` })
-                        break
-                }
-            })
-        }
+        const unsubscribeState = bindEmpirbusClientStatus(this, this.configNode)
 
         this.on('close', () => {
-            if (unsubscribeState)
-                unsubscribeState()
+            unsubscribeState?.()
         })
 
         this.on('input', async msg => {

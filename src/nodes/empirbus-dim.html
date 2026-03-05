@@ -46,6 +46,16 @@
     </div>
 
     <div class="form-row empirbus-row">
+      <label for="node-input-onLevel">
+        <i class="fa fa-sun-o"></i> Ein-Level
+      </label>
+      <div class="empirbus-input-wrapper">
+        <input type="number" id="node-input-onLevel" min="0" max="100" step="1" style="width: 100%;">
+        <span class="help">0–100. Bei "ein" ohne Wert wird 100 verwendet. Bei "aus" wird 0 gesetzt.</span>
+      </div>
+    </div>
+
+    <div class="form-row empirbus-row">
       <label for="node-input-acknowledge">
         <i class="fa fa-check"></i> bestätigen
       </label>
@@ -66,8 +76,7 @@
 
 <script src="resources/node-red-contrib-garmin-empirbus/empirbus-editor.js"></script>
 <script type="text/javascript">
-    /* exported oneditprepare, oneditsave */
-    /* global RED */
+    /* global RED, EmpirbusEditor */
     RED.nodes.registerType('empirbus-dim', {
         category: 'garmin-empirbus',
         color: '#a6bbcf',
@@ -76,6 +85,7 @@
             config: { value: '', type: 'empirbus-config', required: true },
             channelId: { value: '', required: false },
             channelName: { value: '', required: false },
+            onLevel: { value: '', required: false },
             channelIds: { value: '', required: false },
             acknowledge: { value: false }
         },
