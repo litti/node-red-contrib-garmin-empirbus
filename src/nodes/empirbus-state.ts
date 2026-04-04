@@ -1,8 +1,8 @@
 import type { NodeDef, NodeInitializer } from 'node-red'
-import { EmpirBusClientState } from 'garmin-empirbus-ts'
 import type { Channel, EmpirBusChannelRepository } from 'garmin-empirbus-ts'
 import type { EmpirbusConfigNode } from '../types/EmpirbusConfigNode'
 import { deriveAlexaState } from '../helpers/deriveAlexaState'
+import { bindEmpirbusClientStatus } from '../helpers/bindEmpirbusClientStatus'
 
 type Unsubscribe = () => void
 
@@ -30,7 +30,12 @@ const parseIds = (value?: string) => {
     )
 }
 
-const isRelevantChannel = (wantedIds: number[], fallbackId: number | undefined, wantedName: string | undefined, channel: Channel) => {
+const isRelevantChannel = (
+    wantedIds: number[],
+    fallbackId: number | undefined,
+    wantedName: string | undefined,
+    channel: Channel
+) => {
     if (wantedIds.length > 0)
         return wantedIds.includes(channel.id)
 
@@ -59,7 +64,6 @@ const hasChanged = (lastValues: LastValues, channel: Channel) => {
 }
 
 const nodeInit: NodeInitializer = RED => {
-
     function EmpirbusStateNodeConstructor(this: any, config: EmpirbusStateNodeDef) {
         RED.nodes.createNode(this, config)
 
@@ -74,11 +78,8 @@ const nodeInit: NodeInitializer = RED => {
         context.set('lastValues', lastValues)
 
         let unsubscribeUpdate: Unsubscribe | undefined
-        let unsubscribeState: Unsubscribe | undefined
+        let unsubscribeStatus: Unsubscribe | undefined
         let isClosed = false
-
-        const setConnected = () =>
-            this.status({ fill: 'green', shape: 'dot', text: 'listening' })
 
         const setDisconnected = () =>
             this.status({ fill: 'red', shape: 'ring', text: 'disconnected' })
@@ -88,6 +89,8 @@ const nodeInit: NodeInitializer = RED => {
             this.error('No EmpirBus config node configured.')
             return
         }
+
+        unsubscribeStatus = bindEmpirbusClientStatus(this, configNode, { connectedText: 'listening' })
 
         configNode.getRepository().then((repo: EmpirBusChannelRepository) => {
             if (isClosed)
@@ -118,27 +121,6 @@ const nodeInit: NodeInitializer = RED => {
                     payload: { state }
                 })
             })
-
-            unsubscribeState = repo.onState((state: EmpirBusClientState) => {
-                if (isClosed)
-                    return
-
-                switch (state) {
-                    case EmpirBusClientState.Connected:
-                        setConnected()
-                        break
-                    case EmpirBusClientState.Connecting:
-                        this.status({ fill: 'yellow', shape: 'ring', text: 'connecting' })
-                        break
-                    case EmpirBusClientState.Error:
-                        this.status({ fill: 'red', shape: 'dot', text: 'error' })
-                        break
-                    default:
-                    case EmpirBusClientState.Closed:
-                        setDisconnected()
-                        break
-                }
-            })
         }).catch(error => {
             this.error(error)
             setDisconnected()
@@ -147,11 +129,8 @@ const nodeInit: NodeInitializer = RED => {
         this.on('close', () => {
             isClosed = true
 
-            if (unsubscribeUpdate)
-                unsubscribeUpdate()
-
-            if (unsubscribeState)
-                unsubscribeState()
+            unsubscribeUpdate?.()
+            unsubscribeStatus?.()
 
             this.status({})
         })

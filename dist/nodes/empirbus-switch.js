@@ -35,9 +35,9 @@ const nodeInit = RED => {
                 }
             });
         }
+        const unsubscribeState = (0, bindEmpirbusClientStatus_1.bindEmpirbusClientStatus)(this, this.configNode);
         this.on('close', () => {
-            if (unsubscribeState)
-                unsubscribeState();
+            unsubscribeState?.();
         });
         this.on('input', async (msg) => {
             const repo = await getRepository(this);

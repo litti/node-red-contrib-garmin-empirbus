@@ -4,32 +4,34 @@ import { EmpirbusToggleAndSwitchNode } from '../types/EmpirbusToggleAndSwitchNod
 
 type Unsubscribe = () => void
 
-type NodeStatus = {
-    fill: 'green' | 'red'
-    shape: 'dot' | 'ring'
-    text: string
+type Options = {
+    connectedText?: string
 }
 
-const toNodeStatus = (state: EmpirBusClientState): NodeStatus => {
-    if (state === EmpirBusClientState.Connected)
-        return { fill: 'green', shape: 'dot', text: 'connected' }
+const getConnectedText = (options?: Options) =>
+    options?.connectedText ?? 'connected'
 
-    if (state === EmpirBusClientState.Error)
-        return { fill: 'red', shape: 'dot', text: 'ERROR' }
-
-    if (state === EmpirBusClientState.Connecting)
-        return { fill: 'red', shape: 'ring', text: 'connecting' }
-
-    return { fill: 'red', shape: 'ring', text: 'disconnected' }
-}
-
-export const bindEmpirbusClientStatus = (node: EmpirbusToggleAndSwitchNode,  configNode: EmpirbusConfigNode | null): Unsubscribe | undefined => {
+export const bindEmpirbusClientStatus = (node: EmpirbusToggleAndSwitchNode, configNode: EmpirbusConfigNode | null, options?: Options): Unsubscribe | undefined => {
     if (!configNode) {
         node.status({ fill: 'red', shape: 'ring', text: 'unconfigured' })
         return undefined
     }
 
     return configNode.onState(state => {
-        node.status(toNodeStatus(state))
+        switch (state) {
+            case EmpirBusClientState.Connected:
+                node.status({ fill: 'green', shape: 'dot', text: getConnectedText(options) })
+                break
+            case EmpirBusClientState.Error:
+                node.status({ fill: 'red', shape: 'dot', text: 'ERROR' })
+                break
+            case EmpirBusClientState.Connecting:
+                node.status({ fill: 'red', shape: 'ring', text: 'connecting' })
+                break
+            default:
+            case EmpirBusClientState.Closed:
+                node.status({ fill: 'red', shape: 'ring', text: 'disconnected' })
+                break
+        }
     })
 }
