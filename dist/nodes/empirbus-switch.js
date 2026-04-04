@@ -1,5 +1,5 @@
 "use strict";
-const garmin_empirbus_ts_1 = require("garmin-empirbus-ts");
+const bindEmpirbusClientStatus_1 = require("../helpers/bindEmpirbusClientStatus");
 const channelHandling_1 = require("../helpers/channelHandling");
 const getRepository = async (node) => {
     if (!node.configNode)
@@ -15,26 +15,6 @@ const nodeInit = RED => {
         this.channelName = config.channelName || undefined;
         this.channelIds = config.channelIds || '';
         this.selectedChannelIds = (0, channelHandling_1.parseChannelIds)(this.channelIds);
-        let unsubscribeState;
-        if (this.configNode) {
-            unsubscribeState = this.configNode.onState((state) => {
-                switch (state) {
-                    case garmin_empirbus_ts_1.EmpirBusClientState.Connected:
-                        this.status({ fill: 'green', shape: 'dot', text: `connected` });
-                        break;
-                    case garmin_empirbus_ts_1.EmpirBusClientState.Error:
-                        this.status({ fill: 'red', shape: 'dot', text: `ERROR` });
-                        break;
-                    case garmin_empirbus_ts_1.EmpirBusClientState.Connecting:
-                        this.status({ fill: 'red', shape: 'ring', text: `connecting` });
-                        break;
-                    default:
-                    case garmin_empirbus_ts_1.EmpirBusClientState.Closed:
-                        this.status({ fill: 'red', shape: 'ring', text: `disconnected` });
-                        break;
-                }
-            });
-        }
         const unsubscribeState = (0, bindEmpirbusClientStatus_1.bindEmpirbusClientStatus)(this, this.configNode);
         this.on('close', () => {
             unsubscribeState?.();
