@@ -13,7 +13,7 @@ const getConnectedText = (options?: Options) =>
 
 export const bindEmpirbusClientStatus = (node: EmpirbusToggleAndSwitchNode, configNode: EmpirbusConfigNode | null, options?: Options): Unsubscribe | undefined => {
     if (!configNode) {
-        node.status({ fill: 'red', shape: 'ring', text: 'unconfigured' })
+        node.status({ fill: 'red', shape: 'ring', text: 'UNCONFIGURED' })
         return undefined
     }
 
