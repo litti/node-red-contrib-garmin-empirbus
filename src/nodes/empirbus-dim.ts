@@ -35,7 +35,7 @@ const isOnPayload = (payload: unknown): boolean => {
         return payload
 
     if (typeof payload === 'number')
-        return payload > 0
+        return payload === 100
 
     if (typeof payload !== 'string')
         return false
