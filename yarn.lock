@@ -327,10 +327,10 @@ fs.realpath@^1.0.0:
   resolved "https://registry.yarnpkg.com/fs.realpath/-/fs.realpath-1.0.0.tgz#1504ad2523158caa40db4a2787cb01411994ea4f"
   integrity sha512-OO0pH2lK6a0hZnAdau5ItzHPI6pUlvI7jMVnxUQRtw4owF2wk8lOSabtGDCTP4Ggrg2MbGnWO9X8K1t4+fGMDw==
 
-garmin-empirbus-ts@^0.1.20:
-  version "0.1.20"
-  resolved "https://registry.yarnpkg.com/garmin-empirbus-ts/-/garmin-empirbus-ts-0.1.20.tgz#cf45370773558d647476e77a19ef8d441491df01"
-  integrity sha512-SNbuj6JDMtDKYNZ9W/TNrPjyDzIFqW15Cnm7EKXxJ23ErGw1dT8l32QM9RtYcC6v1Uq0HbYm4a7HSTL/LXGvQg==
+garmin-empirbus-ts@^0.1.21:
+  version "0.1.21"
+  resolved "https://registry.yarnpkg.com/garmin-empirbus-ts/-/garmin-empirbus-ts-0.1.21.tgz#c818b7f24717aa9f81bc2bb5693e6d95e7ff04be"
+  integrity sha512-InvCSO0CnRtO0O8t+DILA65E8xDB55whYyV9Y3B+2N4zNQuZDulkz0zKekt2/WO4RD3Fz8joanaLs0v1F3vSQQ==
   dependencies:
     blessed "^0.1.81"
     ws "^8.19.0"

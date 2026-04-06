@@ -1,8 +1,7 @@
 <script type="text/x-red" data-template-name="empirbus-switch">
-
     <style>
       .empirbus-row { display: flex; align-items: flex-start; gap: 8px; }
-      .empirbus-row input[type="text"], .empirbus-row input[type="number"] { flex: 1; width: 100%; }
+      .empirbus-row input[type="text"], .empirbus-row input[type="number"], .empirbus-row select { flex: 1; width: 100%; }
       .empirbus-row label { flex: 0 0 160px; max-width: 160px; white-space: nowrap; padding-top: 7px; }
       .empirbus-input-wrapper { display: flex; flex-direction: column; flex: 1; }
       .empirbus-input-wrapper input { flex: 1; }
@@ -46,6 +45,29 @@
     </div>
 
     <div class="form-row empirbus-row">
+      <label for="node-input-pressMode">
+        <i class="fa fa-hand-pointer-o"></i> Tastendruck
+      </label>
+      <div class="empirbus-input-wrapper">
+        <select id="node-input-pressMode">
+          <option value="switch">Einfacher Tastendruck</option>
+          <option value="press">Langer Tastendruck</option>
+        </select>
+        <span class="help">Kann zur Laufzeit per msg.pressMode überschrieben werden</span>
+      </div>
+    </div>
+
+    <div class="form-row empirbus-row" id="empirbus-hold-duration-row">
+      <label for="node-input-holdDurationMs">
+        <i class="fa fa-clock-o"></i> Haltezeit in ms
+      </label>
+      <div class="empirbus-input-wrapper">
+        <input type="number" id="node-input-holdDurationMs" min="0" step="1">
+        <span class="help">Kann zur Laufzeit per msg.holdDurationMs überschrieben werden</span>
+      </div>
+    </div>
+
+    <div class="form-row empirbus-row">
       <label for="node-input-acknowledge">
         <i class="fa fa-check"></i> bestätigen
       </label>
@@ -61,13 +83,11 @@
       <input type="hidden" id="node-input-channelIds">
       <span class="help">Auswahl mehrerer Kanäle</span>
     </div>
-
 </script>
 
 <script src="resources/node-red-contrib-garmin-empirbus/empirbus-editor.js"></script>
 <script type="text/javascript">
-    /* exported oneditprepare, oneditsave */
-    /* global RED */
+    /* global RED, EmpirbusEditor */
     RED.nodes.registerType('empirbus-switch', {
         category: 'garmin-empirbus',
         color: '#a6bbcf',
@@ -77,26 +97,44 @@
             channelId: { value: '', required: false },
             channelName: { value: '', required: false },
             channelIds: { value: '', required: false },
-            acknowledge: { value: false }
+            acknowledge: { value: false },
+            pressMode: { value: 'switch', required: true },
+            holdDurationMs: {
+                value: 1000,
+                required: false,
+                validate(value) {
+                    if ($('#node-input-pressMode').val() !== 'press')
+                        return true
+
+                    const parsed = Number(value)
+                    return Number.isFinite(parsed) && parsed >= 0
+                }
+            }
         },
         inputs: 1,
         outputs: 1,
         icon: 'bridge.svg',
         label() {
-            return this.name || "EmpirBus Switch"
+            return this.name || 'EmpirBus Switch'
         },
 
         oneditprepare() {
+            const toggleHoldDurationVisibility = () => {
+                const isLongPress = $('#node-input-pressMode').val() === 'press'
+                $('#empirbus-hold-duration-row').toggle(isLongPress)
+            }
+
             EmpirbusEditor.bindConfigChange({
                 node: this,
                 containerSelector: '#empirbus-switch-channels'
             })
+
+            $('#node-input-pressMode').on('change', toggleHoldDurationVisibility)
+            toggleHoldDurationVisibility()
         },
 
         oneditsave() {
-            EmpirbusEditor.saveSelectedChannelIds(
-                '#empirbus-switch-channels'
-            )
+            EmpirbusEditor.saveSelectedChannelIds('#empirbus-switch-channels')
         }
     })
 </script>

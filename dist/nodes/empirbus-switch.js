@@ -6,6 +6,33 @@ const getRepository = async (node) => {
         return null;
     return node.configNode.getRepository();
 };
+const normalizePressMode = (value) => {
+    if (value === 'press')
+        return 'press';
+    return 'switch';
+};
+const normalizeHoldDurationMs = (value, fallback = 1000) => {
+    const parsed = Number(value);
+    if (!Number.isFinite(parsed))
+        return fallback;
+    return Math.max(0, Math.round(parsed));
+};
+const isPressCapableRepository = (repo) => typeof repo.press === 'function'
+    && typeof repo.release === 'function'
+    && typeof repo.pressFor === 'function';
+const resolveRuntimeOptions = (msg, config) => {
+    const configPressMode = normalizePressMode(config.pressMode);
+    const configHoldDurationMs = normalizeHoldDurationMs(config.holdDurationMs, 1000);
+    const msgPressMode = normalizePressMode(msg.pressMode);
+    const pressMode = msg.pressMode === undefined ? configPressMode : msgPressMode;
+    const holdDurationMs = msg.holdDurationMs === undefined
+        ? configHoldDurationMs
+        : normalizeHoldDurationMs(msg.holdDurationMs, configHoldDurationMs);
+    return {
+        pressMode,
+        holdDurationMs
+    };
+};
 const nodeInit = RED => {
     function EmpirbusSwitchNodeConstructor(config) {
         RED.nodes.createNode(this, config);
@@ -32,23 +59,55 @@ const nodeInit = RED => {
                 return;
             }
             try {
-                const promises = ids.map(id => repo.switch(id, msg.payload));
-                const results = await Promise.all(promises);
-                if (results.filter(result => result.hasFailed).length === 0) {
-                    if (this.acknowledge) {
+                const runtimeOptions = resolveRuntimeOptions(msg, config);
+                const payload = msg.payload;
+                const useDirectPress = payload === 'press';
+                const useDirectRelease = payload === 'release';
+                const results = await Promise.all(ids.map(id => {
+                    if (useDirectPress) {
+                        if (!isPressCapableRepository(repo))
+                            throw new Error('EmpirBus repository does not support press commands. Update garmin-empirbus-ts first.');
+                        return repo.press(id);
+                    }
+                    if (useDirectRelease) {
+                        if (!isPressCapableRepository(repo))
+                            throw new Error('EmpirBus repository does not support release commands. Update garmin-empirbus-ts first.');
+                        return repo.release(id);
+                    }
+                    if (runtimeOptions.pressMode === 'press') {
+                        if (!isPressCapableRepository(repo))
+                            throw new Error('EmpirBus repository does not support long press. Update garmin-empirbus-ts first.');
+                        return repo.pressFor(id, runtimeOptions.holdDurationMs);
+                    }
+                    return repo.switch(id, payload);
+                }));
+                const failedResults = results.filter(result => result.hasFailed);
+                if (failedResults.length === 0) {
+                    if (this.acknowledge)
                         msg.acknowledge = true;
+                    if (useDirectPress || useDirectRelease) {
+                        msg.payload = {
+                            action: payload,
+                            durationMs: useDirectPress ? runtimeOptions.holdDurationMs : undefined
+                        };
+                    }
+                    else if (runtimeOptions.pressMode === 'press') {
+                        msg.payload = {
+                            action: 'press',
+                            durationMs: runtimeOptions.holdDurationMs
+                        };
+                    }
+                    else {
                         msg.payload = {
                             state: {
-                                power: msg.payload
+                                power: payload
                             }
                         };
                     }
-                    this.log(`Switched channels ${ids.join(',')} ${msg.payload}, returning message ${JSON.stringify(msg)}`);
+                    this.log(`Handled channels ${ids.join(',')} using mode ${runtimeOptions.pressMode}, returning message ${JSON.stringify(msg)}`);
                 }
                 else {
-                    results
-                        .filter(result => result.hasFailed)
-                        .forEach(result => this.error(result.errors.join(', '), msg));
+                    failedResults.forEach(result => this.error((result.hasFailed ? result.errors || [] : []).join(', '), msg));
                 }
                 this.send(msg);
             }
