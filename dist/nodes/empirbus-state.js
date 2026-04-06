@@ -1,6 +1,6 @@
 "use strict";
-const garmin_empirbus_ts_1 = require("garmin-empirbus-ts");
 const deriveAlexaState_1 = require("../helpers/deriveAlexaState");
+const bindEmpirbusClientStatus_1 = require("../helpers/bindEmpirbusClientStatus");
 const parseIds = (value) => {
     if (!value)
         return [];
@@ -40,15 +40,15 @@ const nodeInit = RED => {
         const lastValues = context.get('lastValues') || {};
         context.set('lastValues', lastValues);
         let unsubscribeUpdate;
-        let unsubscribeState;
+        let unsubscribeStatus;
         let isClosed = false;
-        const setConnected = () => this.status({ fill: 'green', shape: 'dot', text: 'listening' });
         const setDisconnected = () => this.status({ fill: 'red', shape: 'ring', text: 'disconnected' });
         if (!configNode) {
             setDisconnected();
             this.error('No EmpirBus config node configured.');
             return;
         }
+        unsubscribeStatus = (0, bindEmpirbusClientStatus_1.bindEmpirbusClientStatus)(this, configNode, { connectedText: 'listening' });
         configNode.getRepository().then((repo) => {
             if (isClosed)
                 return;
@@ -71,35 +71,14 @@ const nodeInit = RED => {
                     payload: { state }
                 });
             });
-            unsubscribeState = repo.onState((state) => {
-                if (isClosed)
-                    return;
-                switch (state) {
-                    case garmin_empirbus_ts_1.EmpirBusClientState.Connected:
-                        setConnected();
-                        break;
-                    case garmin_empirbus_ts_1.EmpirBusClientState.Connecting:
-                        this.status({ fill: 'yellow', shape: 'ring', text: 'connecting' });
-                        break;
-                    case garmin_empirbus_ts_1.EmpirBusClientState.Error:
-                        this.status({ fill: 'red', shape: 'dot', text: 'error' });
-                        break;
-                    default:
-                    case garmin_empirbus_ts_1.EmpirBusClientState.Closed:
-                        setDisconnected();
-                        break;
-                }
-            });
         }).catch(error => {
             this.error(error);
             setDisconnected();
         });
         this.on('close', () => {
             isClosed = true;
-            if (unsubscribeUpdate)
-                unsubscribeUpdate();
-            if (unsubscribeState)
-                unsubscribeState();
+            unsubscribeUpdate?.();
+            unsubscribeStatus?.();
             this.status({});
         });
     }

@@ -2,22 +2,28 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.bindEmpirbusClientStatus = void 0;
 const garmin_empirbus_ts_1 = require("garmin-empirbus-ts");
-const toNodeStatus = (state) => {
-    if (state === garmin_empirbus_ts_1.EmpirBusClientState.Connected)
-        return { fill: 'green', shape: 'dot', text: 'connected' };
-    if (state === garmin_empirbus_ts_1.EmpirBusClientState.Error)
-        return { fill: 'red', shape: 'dot', text: 'ERROR' };
-    if (state === garmin_empirbus_ts_1.EmpirBusClientState.Connecting)
-        return { fill: 'red', shape: 'ring', text: 'connecting' };
-    return { fill: 'red', shape: 'ring', text: 'disconnected' };
-};
-const bindEmpirbusClientStatus = (node, configNode) => {
+const getConnectedText = (options) => options?.connectedText ?? 'connected';
+const bindEmpirbusClientStatus = (node, configNode, options) => {
     if (!configNode) {
-        node.status({ fill: 'red', shape: 'ring', text: 'unconfigured' });
+        node.status({ fill: 'red', shape: 'ring', text: 'UNCONFIGURED' });
         return undefined;
     }
     return configNode.onState(state => {
-        node.status(toNodeStatus(state));
+        switch (state) {
+            case garmin_empirbus_ts_1.EmpirBusClientState.Connected:
+                node.status({ fill: 'green', shape: 'dot', text: getConnectedText(options) });
+                break;
+            case garmin_empirbus_ts_1.EmpirBusClientState.Error:
+                node.status({ fill: 'red', shape: 'dot', text: 'ERROR' });
+                break;
+            case garmin_empirbus_ts_1.EmpirBusClientState.Connecting:
+                node.status({ fill: 'red', shape: 'ring', text: 'connecting' });
+                break;
+            default:
+            case garmin_empirbus_ts_1.EmpirBusClientState.Closed:
+                node.status({ fill: 'red', shape: 'ring', text: 'disconnected' });
+                break;
+        }
     });
 };
 exports.bindEmpirbusClientStatus = bindEmpirbusClientStatus;
