@@ -15,7 +15,7 @@ const isOnPayload = (payload) => {
     if (typeof payload === 'boolean')
         return payload;
     if (typeof payload === 'number')
-        return payload > 0;
+        return payload === 100;
     if (typeof payload !== 'string')
         return false;
     const normalized = payload.trim().toLowerCase();
