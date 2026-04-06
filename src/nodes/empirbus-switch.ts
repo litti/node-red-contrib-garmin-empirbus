@@ -1,4 +1,5 @@
 import { EmpirBusChannelRepository } from 'garmin-empirbus-ts'
+import { ResultType } from 'garmin-empirbus-ts/dist/application/result'
 import { SwitchState } from 'garmin-empirbus-ts/dist/infrastructure/repositories/EmpirBus/EmpirBusChannelRepository'
 import type { NodeDef, NodeInitializer } from 'node-red'
 import { bindEmpirbusClientStatus } from '../helpers/bindEmpirbusClientStatus'
@@ -20,11 +21,9 @@ interface EmpirbusSwitchNodeDef extends NodeDef {
 }
 
 interface PressCapableRepository extends EmpirBusChannelRepository {
-    press(id: number): Promise<{ hasFailed?: boolean; errors?: string[] }>
-
-    release(id: number): Promise<{ hasFailed?: boolean; errors?: string[] }>
-
-    pressFor(id: number, durationMs: number): Promise<{ hasFailed?: boolean; errors?: string[] }>
+    press(id: number): Promise<ResultType<string>>
+    release(id: number): Promise<ResultType<string>>
+    pressFor(id: number, durationMs: number): Promise<ResultType<string>>
 }
 
 interface RuntimeOptions {
