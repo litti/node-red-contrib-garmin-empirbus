@@ -19,19 +19,80 @@ const normalizeHoldDurationMs = (value, fallback = 1000) => {
 };
 const isPressCapableRepository = (repo) => typeof repo.press === 'function'
     && typeof repo.release === 'function'
-    && typeof repo.pressFor === 'function';
+    && typeof repo.pressForMany === 'function';
 const resolveRuntimeOptions = (msg, config) => {
     const configPressMode = normalizePressMode(config.pressMode);
     const configHoldDurationMs = normalizeHoldDurationMs(config.holdDurationMs, 1000);
-    const msgPressMode = normalizePressMode(msg.pressMode);
-    const pressMode = msg.pressMode === undefined ? configPressMode : msgPressMode;
-    const holdDurationMs = msg.holdDurationMs === undefined
-        ? configHoldDurationMs
-        : normalizeHoldDurationMs(msg.holdDurationMs, configHoldDurationMs);
     return {
-        pressMode,
-        holdDurationMs
+        pressMode: msg.pressMode === undefined
+            ? configPressMode
+            : normalizePressMode(msg.pressMode),
+        holdDurationMs: msg.holdDurationMs === undefined
+            ? configHoldDurationMs
+            : normalizeHoldDurationMs(msg.holdDurationMs, configHoldDurationMs)
     };
+};
+const cloneMessage = (RED, msg) => RED.util.cloneMessage(msg);
+const createActionMessage = (RED, sourceMsg, action, durationMs, acknowledge) => {
+    const nextMsg = cloneMessage(RED, sourceMsg);
+    if (acknowledge)
+        nextMsg.acknowledge = true;
+    nextMsg.payload = {
+        action,
+        durationMs
+    };
+    return nextMsg;
+};
+const createSwitchMessage = (RED, sourceMsg, acknowledge) => {
+    const nextMsg = cloneMessage(RED, sourceMsg);
+    if (acknowledge)
+        nextMsg.acknowledge = true;
+    nextMsg.payload = {
+        state: {
+            power: sourceMsg.payload
+        }
+    };
+    return nextMsg;
+};
+const handleDirectPress = async (RED, node, repo, ids, msg, runtimeOptions) => {
+    const results = await Promise.all(ids.map(id => repo.press(id)));
+    const failedResults = results.filter(result => result.hasFailed);
+    if (failedResults.length > 0) {
+        failedResults.forEach(result => node.error((result.errors || []).join(', '), msg));
+        return;
+    }
+    node.send(createActionMessage(RED, msg, 'press', runtimeOptions.holdDurationMs, node.acknowledge));
+};
+const handleDirectRelease = async (RED, node, repo, ids, msg, runtimeOptions) => {
+    const results = await Promise.all(ids.map(id => repo.release(id)));
+    const failedResults = results.filter(result => result.hasFailed);
+    if (failedResults.length > 0) {
+        failedResults.forEach(result => node.error((result.errors || []).join(', '), msg));
+        return;
+    }
+    node.send(createActionMessage(RED, msg, 'release', runtimeOptions.holdDurationMs, node.acknowledge));
+};
+const handleLongPress = async (RED, node, repo, ids, msg, runtimeOptions) => {
+    const callbacks = {
+        onPress: async () => {
+            node.send(createActionMessage(RED, msg, 'press', runtimeOptions.holdDurationMs, node.acknowledge));
+        },
+        onRelease: async () => {
+            node.send(createActionMessage(RED, msg, 'release', runtimeOptions.holdDurationMs, node.acknowledge));
+        }
+    };
+    const result = await repo.pressForMany(ids, runtimeOptions.holdDurationMs, callbacks);
+    if (result.hasFailed)
+        node.error((result.errors || []).join(', '), msg);
+};
+const handleSwitch = async (RED, node, repo, ids, msg) => {
+    const results = await Promise.all(ids.map(id => repo.switch(id, msg.payload)));
+    const failedResults = results.filter(result => result.hasFailed);
+    if (failedResults.length > 0) {
+        failedResults.forEach(result => node.error((result.errors || []).join(', '), msg));
+        return;
+    }
+    node.send(createSwitchMessage(RED, msg, node.acknowledge));
 };
 const nodeInit = RED => {
     function EmpirbusSwitchNodeConstructor(config) {
@@ -46,7 +107,8 @@ const nodeInit = RED => {
         this.on('close', () => {
             unsubscribeState?.();
         });
-        this.on('input', async (msg) => {
+        this.on('input', async (rawMsg) => {
+            const msg = rawMsg;
             const repo = await getRepository(this);
             if (!repo) {
                 this.error('No EmpirBus config node configured. Configure and select an EmpirBus config node first!', msg);
@@ -60,56 +122,27 @@ const nodeInit = RED => {
             }
             try {
                 const runtimeOptions = resolveRuntimeOptions(msg, config);
-                const payload = msg.payload;
-                const useDirectPress = payload === 'press';
-                const useDirectRelease = payload === 'release';
-                const results = await Promise.all(ids.map(id => {
-                    if (useDirectPress) {
-                        if (!isPressCapableRepository(repo))
-                            throw new Error('EmpirBus repository does not support press commands. Update garmin-empirbus-ts first.');
-                        return repo.press(id);
-                    }
-                    if (useDirectRelease) {
-                        if (!isPressCapableRepository(repo))
-                            throw new Error('EmpirBus repository does not support release commands. Update garmin-empirbus-ts first.');
-                        return repo.release(id);
-                    }
-                    if (runtimeOptions.pressMode === 'press') {
-                        if (!isPressCapableRepository(repo))
-                            throw new Error('EmpirBus repository does not support long press. Update garmin-empirbus-ts first.');
-                        return repo.pressFor(id, runtimeOptions.holdDurationMs);
-                    }
-                    return repo.switch(id, payload);
-                }));
-                const failedResults = results.filter(result => result.hasFailed);
-                if (failedResults.length === 0) {
-                    if (this.acknowledge)
-                        msg.acknowledge = true;
-                    if (useDirectPress || useDirectRelease) {
-                        msg.payload = {
-                            action: payload,
-                            durationMs: useDirectPress ? runtimeOptions.holdDurationMs : undefined
-                        };
-                    }
-                    else if (runtimeOptions.pressMode === 'press') {
-                        msg.payload = {
-                            action: 'press',
-                            durationMs: runtimeOptions.holdDurationMs
-                        };
-                    }
-                    else {
-                        msg.payload = {
-                            state: {
-                                power: payload
-                            }
-                        };
-                    }
-                    this.log(`Handled channels ${ids.join(',')} using mode ${runtimeOptions.pressMode}, returning message ${JSON.stringify(msg)}`);
+                const useDirectPress = msg.payload === 'press';
+                const useDirectRelease = msg.payload === 'release';
+                if (useDirectPress) {
+                    if (!isPressCapableRepository(repo))
+                        throw new Error('EmpirBus repository does not support press commands. Update garmin-empirbus-ts first.');
+                    await handleDirectPress(RED, this, repo, ids, msg, runtimeOptions);
+                    return;
                 }
-                else {
-                    failedResults.forEach(result => this.error((result.hasFailed ? result.errors || [] : []).join(', '), msg));
+                if (useDirectRelease) {
+                    if (!isPressCapableRepository(repo))
+                        throw new Error('EmpirBus repository does not support release commands. Update garmin-empirbus-ts first.');
+                    await handleDirectRelease(RED, this, repo, ids, msg, runtimeOptions);
+                    return;
                 }
-                this.send(msg);
+                if (runtimeOptions.pressMode === 'press') {
+                    if (!isPressCapableRepository(repo))
+                        throw new Error('EmpirBus repository does not support long press. Update garmin-empirbus-ts first.');
+                    await handleLongPress(RED, this, repo, ids, msg, runtimeOptions);
+                    return;
+                }
+                await handleSwitch(RED, this, repo, ids, msg);
             }
             catch (error) {
                 this.error(error, msg);
