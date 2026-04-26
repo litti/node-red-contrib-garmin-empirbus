@@ -1,0 +1,138 @@
+[
+  {
+    "id": "a811cddf3dabe080",
+    "type": "tab",
+    "label": "Flow 1",
+    "disabled": false,
+    "info": "",
+    "env": []
+  },
+  {
+    "id": "b91435e0cde3eb4b",
+    "type": "empirbus-dim",
+    "z": "a811cddf3dabe080",
+    "name": "",
+    "config": "",
+    "channelId": "",
+    "channelName": "",
+    "onLevel": "",
+    "channelIds": "",
+    "acknowledge": false,
+    "x": 340,
+    "y": 260,
+    "wires": [
+      [
+        "94d45e762721e26a"
+      ]
+    ]
+  },
+  {
+    "id": "be82a032dde907a9",
+    "type": "empirbus-state",
+    "z": "a811cddf3dabe080",
+    "name": "",
+    "config": "",
+    "channelId": "",
+    "channelName": "",
+    "channelIds": "",
+    "x": 340,
+    "y": 440,
+    "wires": [
+      [
+        "94d45e762721e26a"
+      ]
+    ]
+  },
+  {
+    "id": "950597d6d8931093",
+    "type": "empirbus-switch",
+    "z": "a811cddf3dabe080",
+    "name": "",
+    "config": "",
+    "channelId": "",
+    "channelName": "",
+    "channelIds": "",
+    "acknowledge": false,
+    "pressMode": "switch",
+    "holdDurationMs": 1000,
+    "x": 350,
+    "y": 320,
+    "wires": [
+      [
+        "94d45e762721e26a"
+      ]
+    ]
+  },
+  {
+    "id": "81244700e9657f18",
+    "type": "empirbus-toggle",
+    "z": "a811cddf3dabe080",
+    "name": "",
+    "config": "",
+    "channelId": "",
+    "channelName": "",
+    "channelIds": "",
+    "acknowledge": false,
+    "x": 350,
+    "y": 380,
+    "wires": [
+      [
+        "94d45e762721e26a"
+      ]
+    ]
+  },
+  {
+    "id": "5165b257cbef0a4e",
+    "type": "inject",
+    "z": "a811cddf3dabe080",
+    "name": "",
+    "props": [
+      {
+        "p": "payload"
+      },
+      {
+        "p": "topic",
+        "vt": "str"
+      }
+    ],
+    "repeat": "",
+    "crontab": "",
+    "once": false,
+    "onceDelay": 0.1,
+    "topic": "",
+    "payload": "",
+    "payloadType": "date",
+    "x": 120,
+    "y": 260,
+    "wires": [
+      [
+        "b91435e0cde3eb4b",
+        "950597d6d8931093"
+      ]
+    ]
+  },
+  {
+    "id": "94d45e762721e26a",
+    "type": "debug",
+    "z": "a811cddf3dabe080",
+    "name": "debug 1",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "false",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 660,
+    "y": 340,
+    "wires": []
+  },
+  {
+    "id": "f50daaad907b5eb0",
+    "type": "global-config",
+    "env": [],
+    "modules": {
+      "node-red-contrib-garmin-empirbus": "1.1.28"
+    }
+  }
+]

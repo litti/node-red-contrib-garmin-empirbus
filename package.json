@@ -6,7 +6,14 @@
   "keywords": [
     "node-red"
   ],
+  "bugs": {
+    "url": "https://github.com/litti/node-red-contrib-garmin-empirbus/issues"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  },
   "node-red": {
+    "version": ">=2.0.0",
     "nodes": {
       "empirbus-config": "dist/nodes/empirbus-config.js",
       "empirbus-dim": "dist/nodes/empirbus-dim.js",
@@ -18,6 +25,7 @@
   "scripts": {
     "build": "tsc && yarn copy:html && yarn build:resources",
     "build:resources": "tsc -p tsconfig.resources.json",
+    "copy:examples": "copyfiles -u 1 \"src/examples/**/*.*\" dist",
     "copy:html": "copyfiles -u 1 \"src/nodes/**/*.html\" dist",
     "release:patch": "node scripts/release.mjs patch",
     "release:minor": "node scripts/release.mjs minor",
