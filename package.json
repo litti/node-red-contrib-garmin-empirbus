@@ -10,11 +10,11 @@
     "url": "https://github.com/litti/node-red-contrib-garmin-empirbus/issues"
   },
   "engines": {
-    "node": ">=20.0.0",
-    "npm": ">=8.0.0"
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
   },
   "node-red": {
-    "version": ">=2.0.0",
+    "version": ">=4.0.0",
     "nodes": {
       "empirbus-config": "dist/nodes/empirbus-config.js",
       "empirbus-dim": "dist/nodes/empirbus-dim.js",
