@@ -23,7 +23,7 @@
     }
   },
   "scripts": {
-    "build": "tsc && yarn copy:html && yarn build:resources",
+    "build": "tsc && yarn copy:examples && yarn copy:html && yarn build:resources",
     "build:resources": "tsc -p tsconfig.resources.json",
     "copy:examples": "copyfiles -u 1 \"src/examples/**/*.*\" dist",
     "copy:html": "copyfiles -u 1 \"src/nodes/**/*.html\" dist",
