@@ -86,9 +86,7 @@ const runCapture = (cmd, args, options = {}) => {
 }
 
 const npmEnv = () => ({
-    ...process.env,
-    npm_config_userconfig: userconfig,
-    npm_config_registry: registry
+    ...process.env
 })
 
 const ensureCleanGit = () => {
