@@ -20,12 +20,12 @@ const isRelevantChannel = (wantedIds, fallbackId, wantedName, channel) => {
 };
 const hasChanged = (lastValues, channel) => {
     const previous = lastValues[channel.id];
-    if (previous === undefined) {
-        lastValues[channel.id] = channel.rawValue;
-        return false;
-    }
     if (previous === channel.rawValue)
         return false;
+    if (previous === undefined) {
+        lastValues[channel.id] = channel.rawValue;
+        return true;
+    }
     lastValues[channel.id] = channel.rawValue;
     return true;
 };
