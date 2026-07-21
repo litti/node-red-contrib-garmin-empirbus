@@ -20,7 +20,8 @@
       "empirbus-dim": "dist/nodes/empirbus-dim.js",
       "empirbus-state": "dist/nodes/empirbus-state.js",
       "empirbus-switch": "dist/nodes/empirbus-switch.js",
-      "empirbus-toggle": "dist/nodes/empirbus-toggle.js"
+      "empirbus-toggle": "dist/nodes/empirbus-toggle.js",
+      "empirbus-command": "dist/nodes/empirbus-command.js"
     }
   },
   "scripts": {
