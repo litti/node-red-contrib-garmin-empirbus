@@ -1,0 +1,9 @@
+<script type="text/x-red" data-template-name="empirbus-command">
+  <div class="form-row"><label for="node-input-name"><i class="fa fa-tag"></i> Name</label><input id="node-input-name" type="text"></div>
+  <div class="form-row"><label for="node-input-config"><i class="fa fa-cog"></i> EmpirBus Config</label><input id="node-input-config" type="text"></div>
+  <div class="form-row"><label for="node-input-acknowledge"><i class="fa fa-check"></i> Acknowledge</label><input id="node-input-acknowledge" type="checkbox" style="width:auto"></div>
+  <p>Accepts a generic command in <code>msg.payload</code>: operation, endpointId, value and optional durationMs.</p>
+</script>
+<script type="text/javascript">
+RED.nodes.registerType('empirbus-command',{category:'garmin-empirbus',color:'#a6bbcf',defaults:{name:{value:''},config:{value:'',type:'empirbus-config',required:true},acknowledge:{value:true}},inputs:1,outputs:1,icon:'bridge.svg',label:function(){return this.name||'EmpirBus Command'}})
+</script>
