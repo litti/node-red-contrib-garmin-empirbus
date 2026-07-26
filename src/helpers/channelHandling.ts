@@ -67,11 +67,32 @@ const getChannelIdsFromMsg = (msg: NodeMessageInFlow): number[] | null => {
 
 const getChannelIdsFromTopicOfMsg = (msg: NodeMessageInFlow): number[] | null => {
     const raw = (msg as any).topic
+
     if (typeof raw === 'number' && Number.isFinite(raw))
         return [raw]
-    if (typeof raw === 'string' && raw.trim().length > 0)
-        return parseChannelIds(raw)
-    return null
+
+    if (typeof raw !== 'string')
+        return null
+
+    const topic = raw.trim()
+    if (!topic)
+        return null
+
+    const empirbusMatch = /^empirbus\/(\d+)$/i.exec(topic)
+
+    if (empirbusMatch) {
+        const id = Number(empirbusMatch[1])
+
+        return Number.isFinite(id)
+            ? [id]
+            : null
+    }
+
+    const ids = parseChannelIds(topic)
+
+    return ids.length > 0
+        ? ids
+        : null
 }
 
 const getChannelNameFromMsg = (msg: NodeMessageInFlow): string | null => {
