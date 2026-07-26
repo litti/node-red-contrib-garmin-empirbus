@@ -60,9 +60,22 @@ const getChannelIdsFromTopicOfMsg = (msg) => {
     const raw = msg.topic;
     if (typeof raw === 'number' && Number.isFinite(raw))
         return [raw];
-    if (typeof raw === 'string' && raw.trim().length > 0)
-        return (0, exports.parseChannelIds)(raw);
-    return null;
+    if (typeof raw !== 'string')
+        return null;
+    const topic = raw.trim();
+    if (!topic)
+        return null;
+    const empirbusMatch = /^empirbus\/(\d+)$/i.exec(topic);
+    if (empirbusMatch) {
+        const id = Number(empirbusMatch[1]);
+        return Number.isFinite(id)
+            ? [id]
+            : null;
+    }
+    const ids = (0, exports.parseChannelIds)(topic);
+    return ids.length > 0
+        ? ids
+        : null;
 };
 const getChannelNameFromMsg = (msg) => {
     const raw = msg.channelName;
