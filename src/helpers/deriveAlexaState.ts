@@ -3,6 +3,9 @@ import type { Channel } from 'garmin-empirbus-ts'
 type AlexaState = Record<string, unknown>
 
 const toNumber = (value: unknown) => {
+    if (typeof value !== 'number' && typeof value !== 'string')
+        return undefined
+
     const n = typeof value === 'number' ? value : Number(value)
     return Number.isFinite(n) ? n : undefined
 }
@@ -41,8 +44,30 @@ const parsePercent = (value: unknown) => {
 const isBinary = (rawValue: number) =>
     rawValue === 0 || rawValue === 1
 
-const toPower = (rawValue: number) =>
-    rawValue === 1 ? 'ON' : 'OFF'
+const toPower = (value: boolean | number) =>
+    value === true || value === 1 ? 'ON' : 'OFF'
+
+const buildPower = (channel: Channel): AlexaState | null => {
+    const status = channel.onOffStatus
+
+    if (typeof status !== 'boolean')
+        return null
+
+    const state: AlexaState = {
+        power: toPower(status)
+    }
+
+    if (typeof channel.unavailable === 'boolean')
+        state.unavailable = channel.unavailable
+
+    if (typeof channel.error1 === 'boolean')
+        state.error1 = channel.error1
+
+    if (typeof channel.error2 === 'boolean')
+        state.error2 = channel.error2
+
+    return state
+}
 
 const buildTemperatureOrSetPoint = (channel: Channel): AlexaState | null => {
     const value = toNumber(channel.decodedValue)
@@ -111,6 +136,10 @@ export const deriveAlexaState = (channel: Channel): AlexaState | null => {
 
     if (textIncludesAny(key, ['value %', 'state of charge', '%']))
         return buildPercentage(channel)
+
+    const power = buildPower(channel)
+    if (power)
+        return power
 
     if (isBinary(channel.rawValue))
         return { power: toPower(channel.rawValue) }
