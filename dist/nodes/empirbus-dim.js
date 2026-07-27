@@ -2,6 +2,7 @@
 const channelHandling_1 = require("../helpers/channelHandling");
 const getRepository_1 = require("../helpers/getRepository");
 const bindEmpirbusClientStatus_1 = require("../helpers/bindEmpirbusClientStatus");
+const inputPayload_1 = require("../helpers/inputPayload");
 const clampBrightness = (value) => Math.max(0, Math.min(100, Math.round(value)));
 const toNumberOrUndefined = (value) => {
     if (value === undefined || value === null)
@@ -81,7 +82,7 @@ const nodeInit = RED => {
                 return;
             }
             try {
-                const brightness = resolveBrightness(msg.payload, onLevel);
+                const brightness = resolveBrightness((0, inputPayload_1.resolveDimPayload)(msg.payload), onLevel);
                 const promises = ids.map(id => repo.dim(id, toDimState(brightness)));
                 const results = await Promise.all(promises);
                 if (results.filter(result => result.hasFailed).length === 0) {

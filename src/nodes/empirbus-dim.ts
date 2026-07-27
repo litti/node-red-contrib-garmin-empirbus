@@ -5,6 +5,7 @@ import { EmpirbusConfigNode } from '../types/EmpirbusConfigNode'
 import { EmpirbusToggleAndSwitchNode } from '../types/EmpirbusToggleAndSwitchNode'
 import { getRepository } from '../helpers/getRepository'
 import { bindEmpirbusClientStatus } from '../helpers/bindEmpirbusClientStatus'
+import { resolveDimPayload } from '../helpers/inputPayload'
 
 interface EmpirbusDimNodeDef extends NodeDef {
     acknowledge: boolean
@@ -122,7 +123,7 @@ const nodeInit: NodeInitializer = RED => {
             }
 
             try {
-                const brightness = resolveBrightness(msg.payload, onLevel)
+                const brightness = resolveBrightness(resolveDimPayload(msg.payload), onLevel)
                 const promises = ids.map(id => repo.dim(id, toDimState(brightness)))
                 const results = await Promise.all(promises)
 

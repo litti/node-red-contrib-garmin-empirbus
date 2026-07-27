@@ -1,5 +1,6 @@
 "use strict";
 const bindEmpirbusClientStatus_1 = require("../helpers/bindEmpirbusClientStatus");
+const inputPayload_1 = require("../helpers/inputPayload");
 const channelHandling_1 = require("../helpers/channelHandling");
 const getRepository = async (node) => {
     if (!node.configNode)
@@ -43,13 +44,13 @@ const createActionMessage = (RED, sourceMsg, action, durationMs, acknowledge) =>
     };
     return nextMsg;
 };
-const createSwitchMessage = (RED, sourceMsg, acknowledge) => {
+const createSwitchMessage = (RED, sourceMsg, acknowledge, power) => {
     const nextMsg = cloneMessage(RED, sourceMsg);
     if (acknowledge)
         nextMsg.acknowledge = true;
     nextMsg.payload = {
         state: {
-            power: sourceMsg.payload
+            power
         }
     };
     return nextMsg;
@@ -86,13 +87,16 @@ const handleLongPress = async (RED, node, repo, ids, msg, runtimeOptions) => {
         node.error((result.errors || []).join(', '), msg);
 };
 const handleSwitch = async (RED, node, repo, ids, msg) => {
-    const results = await Promise.all(ids.map(id => repo.switch(id, msg.payload)));
+    const power = (0, inputPayload_1.resolvePower)(msg.payload);
+    if (power === undefined)
+        throw new Error(`Invalid switch payload: ${JSON.stringify(msg.payload)}`);
+    const results = await Promise.all(ids.map(id => repo.switch(id, power)));
     const failedResults = results.filter(result => result.hasFailed);
     if (failedResults.length > 0) {
         failedResults.forEach(result => node.error((result.errors || []).join(', '), msg));
         return;
     }
-    node.send(createSwitchMessage(RED, msg, node.acknowledge));
+    node.send(createSwitchMessage(RED, msg, node.acknowledge, power));
 };
 const nodeInit = RED => {
     function EmpirbusSwitchNodeConstructor(config) {
@@ -122,8 +126,9 @@ const nodeInit = RED => {
             }
             try {
                 const runtimeOptions = resolveRuntimeOptions(msg, config);
-                const useDirectPress = msg.payload === 'press';
-                const useDirectRelease = msg.payload === 'release';
+                const action = (0, inputPayload_1.resolveAction)(msg.payload);
+                const useDirectPress = action === 'press';
+                const useDirectRelease = action === 'release';
                 if (useDirectPress) {
                     if (!isPressCapableRepository(repo))
                         throw new Error('EmpirBus repository does not support press commands. Update garmin-empirbus-ts first.');

@@ -2,6 +2,7 @@ import { EmpirBusChannelRepository, PressForCallbacks, SwitchState } from 'garmi
 import { ResultType } from 'garmin-empirbus-ts/dist/application/result'
 import type { NodeDef, NodeInitializer } from 'node-red'
 import { bindEmpirbusClientStatus } from '../helpers/bindEmpirbusClientStatus'
+import { resolveAction, resolvePower } from '../helpers/inputPayload'
 import { parseChannelIds, resolveChannelIds } from '../helpers/channelHandling'
 import { EmpirbusConfigNode } from '../types/EmpirbusConfigNode'
 import { EmpirbusToggleAndSwitchNode } from '../types/EmpirbusToggleAndSwitchNode'
@@ -113,7 +114,8 @@ const createActionMessage = (
 const createSwitchMessage = (
     RED: Parameters<NodeInitializer>[0],
     sourceMsg: MutableMessage,
-    acknowledge: boolean
+    acknowledge: boolean,
+    power: SwitchState
 ): MutableMessage => {
     const nextMsg = cloneMessage(RED, sourceMsg)
 
@@ -122,7 +124,7 @@ const createSwitchMessage = (
 
     nextMsg.payload = {
         state: {
-            power: sourceMsg.payload
+            power
         }
     }
 
@@ -221,7 +223,12 @@ const handleSwitch = async (
     ids: number[],
     msg: MutableMessage
 ) => {
-    const results = await Promise.all(ids.map(id => repo.switch(id, msg.payload as SwitchState)))
+    const power = resolvePower(msg.payload)
+
+    if (power === undefined)
+        throw new Error(`Invalid switch payload: ${JSON.stringify(msg.payload)}`)
+
+    const results = await Promise.all(ids.map(id => repo.switch(id, power)))
     const failedResults = results.filter(result => result.hasFailed)
 
     if (failedResults.length > 0) {
@@ -229,7 +236,7 @@ const handleSwitch = async (
         return
     }
 
-    node.send(createSwitchMessage(RED, msg, node.acknowledge))
+    node.send(createSwitchMessage(RED, msg, node.acknowledge, power))
 }
 
 const nodeInit: NodeInitializer = RED => {
@@ -267,8 +274,9 @@ const nodeInit: NodeInitializer = RED => {
 
             try {
                 const runtimeOptions = resolveRuntimeOptions(msg, config)
-                const useDirectPress = msg.payload === 'press'
-                const useDirectRelease = msg.payload === 'release'
+                const action = resolveAction(msg.payload)
+                const useDirectPress = action === 'press'
+                const useDirectRelease = action === 'release'
 
                 if (useDirectPress) {
                     if (!isPressCapableRepository(repo))
