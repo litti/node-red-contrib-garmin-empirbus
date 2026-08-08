@@ -5,10 +5,11 @@
 <div class="form-row empirbus-row"><label for="node-input-channelId">Channel ID</label><input id="node-input-channelId" type="number"></div>
 <div class="form-row empirbus-row"><label for="node-input-channelName">Channel Name</label><input id="node-input-channelName" type="text"></div>
 <div class="form-row empirbus-row"><label for="node-input-acknowledge"><i class="fa fa-check"></i> Acknowledge</label><div class="empirbus-input-wrapper"><input id="node-input-acknowledge" type="checkbox" style="width:auto"><span class="help">Adds <code>acknowledge:true</code> and enables the output.</span></div></div>
+<input type="hidden" id="node-input-outputs">
 <div class="form-row"><label>Channels</label><div id="empirbus-toggle-channels"></div><input type="hidden" id="node-input-channelIds"><span class="help">Selected IDs take precedence over message IDs, single ID and channel name.</span></div>
 </script>
 <script src="resources/node-red-contrib-garmin-empirbus/empirbus-editor.js"></script>
 <script type="text/javascript">
-RED.nodes.registerType('empirbus-toggle',{category:'garmin-empirbus',color:'#a6bbcf',defaults:{name:{value:''},config:{value:'',type:'empirbus-config',required:true},channelId:{value:''},channelName:{value:''},channelIds:{value:''},acknowledge:{value:false}},inputs:1,outputs:function(){return this.acknowledge?1:0},icon:'empirbus-toggle.svg',label:function(){return this.name||'EmpirBus Toggle'},oneditprepare:function(){EmpirbusEditor.bindConfigChange({node:this,containerSelector:'#empirbus-toggle-channels'})},oneditsave:function(){EmpirbusEditor.saveSelectedChannelIds('#empirbus-toggle-channels')}})
+RED.nodes.registerType('empirbus-toggle',{category:'garmin-empirbus',color:'#a6bbcf',defaults:{name:{value:''},config:{value:'',type:'empirbus-config',required:true},channelId:{value:''},channelName:{value:''},channelIds:{value:''},acknowledge:{value:false},outputs:{value:0}},inputs:1,icon:'empirbus-toggle.svg',label:function(){return this.name||'EmpirBus Toggle'},oneditprepare:function(){EmpirbusEditor.bindConfigChange({node:this,containerSelector:'#empirbus-toggle-channels'})},oneditsave:function(){EmpirbusEditor.saveSelectedChannelIds('#empirbus-toggle-channels')}})
 </script>
 <script type="text/x-red" data-help-name="empirbus-toggle"><h3>Deutsch</h3><p>Schaltet bekannte Zustände um. Ist ein Zustand unbekannt, wird für keinen konfigurierten Kanal gesendet.</p><h3>English</h3><p>Toggles known states. If any configured channel state is unknown, nothing is sent.</p></script>

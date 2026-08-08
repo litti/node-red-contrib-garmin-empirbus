@@ -9,6 +9,7 @@
         node: {
             channelIds?: string
             acknowledge?: boolean
+            outputs?: number
         }
         containerSelector: string
     }
@@ -252,8 +253,25 @@
 
         $('#node-input-channelIds').val(ids.join(','))
 
-        const acknowledge = $('#node-input-acknowledge').is(':checked')
-        $('#node-input-acknowledge').val(acknowledge ? 'true' : 'false')
+    }
+
+    const bindAcknowledgeOutput = (node: { acknowledge?: boolean }): void => {
+        const acknowledgeInput = $('#node-input-acknowledge')
+        const outputsInput = $('#node-input-outputs')
+
+        if (acknowledgeInput.length === 0 || outputsInput.length === 0)
+            return
+
+        const syncOutputs = (): void => {
+            outputsInput.val(acknowledgeInput.is(':checked') ? '1' : '0')
+        }
+
+        acknowledgeInput
+            .prop('checked', !!node.acknowledge)
+            .off('change.empirbus-output')
+            .on('change.empirbus-output', syncOutputs)
+
+        syncOutputs()
     }
 
     const bindConfigChange = ({ node, containerSelector }: BindOptions): void => {
@@ -269,7 +287,7 @@
             })
         }
 
-        $('#node-input-acknowledge').prop('checked', !!node.acknowledge)
+        bindAcknowledgeOutput(node)
         $('#node-input-config').on('change', refresh)
         refresh()
     }
@@ -277,10 +295,12 @@
     ;(window as unknown as {
         EmpirbusEditor: {
             bindConfigChange: typeof bindConfigChange
+            bindAcknowledgeOutput: typeof bindAcknowledgeOutput
             saveSelectedChannelIds: typeof saveSelectedChannelIds
         }
     }).EmpirbusEditor = {
         bindConfigChange,
+        bindAcknowledgeOutput,
         saveSelectedChannelIds
     }
 })()

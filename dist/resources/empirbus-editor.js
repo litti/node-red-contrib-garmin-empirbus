@@ -182,8 +182,20 @@
                 ids.push(id);
         });
         $('#node-input-channelIds').val(ids.join(','));
-        const acknowledge = $('#node-input-acknowledge').is(':checked');
-        $('#node-input-acknowledge').val(acknowledge ? 'true' : 'false');
+    };
+    const bindAcknowledgeOutput = (node) => {
+        const acknowledgeInput = $('#node-input-acknowledge');
+        const outputsInput = $('#node-input-outputs');
+        if (acknowledgeInput.length === 0 || outputsInput.length === 0)
+            return;
+        const syncOutputs = () => {
+            outputsInput.val(acknowledgeInput.is(':checked') ? '1' : '0');
+        };
+        acknowledgeInput
+            .prop('checked', !!node.acknowledge)
+            .off('change.empirbus-output')
+            .on('change.empirbus-output', syncOutputs);
+        syncOutputs();
     };
     const bindConfigChange = ({ node, containerSelector }) => {
         ensureStyles();
@@ -195,13 +207,13 @@
                 selectedIds: toSelectedIds(node.channelIds)
             });
         };
-        $('#node-input-acknowledge').prop('checked', !!node.acknowledge);
+        bindAcknowledgeOutput(node);
         $('#node-input-config').on('change', refresh);
         refresh();
     };
     window.EmpirbusEditor = {
         bindConfigChange,
+        bindAcknowledgeOutput,
         saveSelectedChannelIds
     };
 })();
-//# sourceMappingURL=empirbus-editor.js.map
