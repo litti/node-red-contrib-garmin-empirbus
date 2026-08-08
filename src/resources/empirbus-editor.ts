@@ -255,6 +255,19 @@
 
     }
 
+
+    const assignSingleConfig = (node: { config?: string }): void => {
+        if (node.config)
+            return
+
+        const configs = RED.nodes.filterNodes({ type: 'empirbus-config' })
+
+        if (configs.length !== 1)
+            return
+
+        node.config = configs[0].id
+    }
+
     const bindAcknowledgeOutput = (node: { acknowledge?: boolean }): void => {
         const acknowledgeInput = $('#node-input-acknowledge')
         const outputsInput = $('#node-input-outputs')
@@ -294,11 +307,13 @@
 
     ;(window as unknown as {
         EmpirbusEditor: {
+            assignSingleConfig: typeof assignSingleConfig
             bindConfigChange: typeof bindConfigChange
             bindAcknowledgeOutput: typeof bindAcknowledgeOutput
             saveSelectedChannelIds: typeof saveSelectedChannelIds
         }
     }).EmpirbusEditor = {
+        assignSingleConfig,
         bindConfigChange,
         bindAcknowledgeOutput,
         saveSelectedChannelIds

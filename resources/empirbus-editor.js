@@ -183,6 +183,14 @@
         });
         $('#node-input-channelIds').val(ids.join(','));
     };
+    const assignSingleConfig = (node) => {
+        if (node.config)
+            return;
+        const configs = RED.nodes.filterNodes({ type: 'empirbus-config' });
+        if (configs.length !== 1)
+            return;
+        node.config = configs[0].id;
+    };
     const bindAcknowledgeOutput = (node) => {
         const acknowledgeInput = $('#node-input-acknowledge');
         const outputsInput = $('#node-input-outputs');
@@ -212,6 +220,7 @@
         refresh();
     };
     window.EmpirbusEditor = {
+        assignSingleConfig,
         bindConfigChange,
         bindAcknowledgeOutput,
         saveSelectedChannelIds
