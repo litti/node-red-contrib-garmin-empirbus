@@ -186,7 +186,8 @@
     const assignSingleConfig = (node) => {
         if (node.config)
             return;
-        const configs = RED.nodes.filterNodes({ type: 'empirbus-config' });
+        const editor = window.RED;
+        const configs = editor.nodes.filterNodes({ type: 'empirbus-config' });
         if (configs.length !== 1)
             return;
         node.config = configs[0].id;

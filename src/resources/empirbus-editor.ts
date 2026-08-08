@@ -255,7 +255,6 @@
 
     }
 
-
     const assignSingleConfig = (node: { config?: string }): void => {
         if (node.config)
             return
