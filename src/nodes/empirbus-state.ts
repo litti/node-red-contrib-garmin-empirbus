@@ -1,142 +1,62 @@
 import type { NodeDef, NodeInitializer } from 'node-red'
 import type { Channel, EmpirBusChannelRepository } from 'garmin-empirbus-ts'
 import type { EmpirbusConfigNode } from '../types/EmpirbusConfigNode'
-import { deriveAlexaState } from '../helpers/deriveAlexaState'
+import { deriveChannelState } from '../helpers/deriveChannelState'
 import { bindEmpirbusClientStatus } from '../helpers/bindEmpirbusClientStatus'
 
 type Unsubscribe = () => void
+interface Def extends NodeDef { name: string; config: string; channelIds?: string; channelId?: string; channelName?: string }
+type State = Record<string, unknown>
 
-interface EmpirbusStateNodeDef extends NodeDef {
-    name: string
-    config: string
-    channelIds?: string
-    channelId?: string
-    channelName?: string
-}
+const parseIds = (value?: string) => Array.from(new Set((value || '').split(',').map(v => Number(v.trim())).filter(Number.isFinite)))
+const stable = (value: State) => JSON.stringify(value, Object.keys(value).sort())
 
-type LastValues = Record<number, number | null>
-
-const parseIds = (value?: string) => {
-    if (!value)
-        return []
-
-    return Array.from(
-        new Set(
-            value
-                .split(',')
-                .map(v => Number(v.trim()))
-                .filter(v => Number.isFinite(v))
-        )
-    )
-}
-
-const isRelevantChannel = (
-    wantedIds: number[],
-    fallbackId: number | undefined,
-    wantedName: string | undefined,
-    channel: Channel
-) => {
-    if (wantedIds.length > 0)
-        return wantedIds.includes(channel.id)
-
-    if (fallbackId !== undefined)
-        return channel.id === fallbackId
-
-    if (wantedName)
-        return (channel.name || '').toLowerCase() === wantedName
-
-    return true
-}
-
-const hasChanged = (lastValues: LastValues, channel: Channel) => {
-    const previous = lastValues[channel.id]
-
-    if (previous === channel.rawValue)
-        return false
-
-    if (previous === undefined) {
-        lastValues[channel.id] = channel.rawValue
-        return true
-    }
-
-    lastValues[channel.id] = channel.rawValue
-    return true
-}
-
-const nodeInit: NodeInitializer = RED => {
-    function EmpirbusStateNodeConstructor(this: any, config: EmpirbusStateNodeDef) {
+const init: NodeInitializer = RED => {
+    function Constructor(this: any, config: Def) {
         RED.nodes.createNode(this, config)
-
         const configNode = RED.nodes.getNode(config.config) as EmpirbusConfigNode | null
-
         const wantedIds = parseIds(config.channelIds)
-        const fallbackId = config.channelId ? Number(config.channelId) : undefined
-        const wantedName = config.channelName?.toLowerCase()
-
-        const context = this.context()
-        const lastValues: LastValues = context.get('lastValues') || {}
-        context.set('lastValues', lastValues)
-
+        const parsedFallback = config.channelId === undefined || config.channelId === '' ? undefined : Number(config.channelId)
+        const fallbackId = Number.isFinite(parsedFallback) ? parsedFallback : undefined
+        const wantedName = config.channelName?.trim().toLowerCase()
+        const lastStates = new Map<number, string>()
         let unsubscribeUpdate: Unsubscribe | undefined
-        let unsubscribeStatus: Unsubscribe | undefined
-        let isClosed = false
+        let closed = false
 
-        const setDisconnected = () =>
-            this.status({ fill: 'red', shape: 'ring', text: 'disconnected' })
-
+        const unsubscribeStatus = bindEmpirbusClientStatus(this, configNode, { connectedText: 'listening' })
         if (!configNode) {
-            setDisconnected()
             this.error('No EmpirBus config node configured.')
             return
         }
 
-        unsubscribeStatus = bindEmpirbusClientStatus(this, configNode, { connectedText: 'listening' })
+        const relevant = (channel: Channel) => {
+            if (wantedIds.length) return wantedIds.includes(channel.id)
+            if (fallbackId !== undefined) return channel.id === fallbackId
+            if (wantedName) return (channel.name || '').trim().toLowerCase() === wantedName
+            return true
+        }
 
         configNode.getRepository().then((repo: EmpirBusChannelRepository) => {
-            if (isClosed)
-                return
-
+            if (closed) return
             unsubscribeUpdate = repo.onUpdate((channel: Channel) => {
-                if (isClosed)
-                    return
-
-                if (!isRelevantChannel(wantedIds, fallbackId, wantedName, channel))
-                    return
-
-                if (!hasChanged(lastValues, channel))
-                    return
-
-                context.set('lastValues', lastValues)
-
-                const state = deriveAlexaState(channel)
-                if (!state)
-                    return
-
+                if (closed || !relevant(channel)) return
+                const state = deriveChannelState(channel)
+                if (!state) return
+                const serialized = stable(state)
+                if (lastStates.get(channel.id) === serialized) return
+                lastStates.set(channel.id, serialized)
                 const endpointId = String(channel.id)
-
-                this.send({
-                    acknowledge: true,
-                    endpointId,
-                    topic: `empirbus/${endpointId}`,
-                    payload: { state }
-                })
+                this.send({ acknowledge: true, endpointId, topic: `empirbus/${endpointId}`, payload: { state } })
             })
-        }).catch(error => {
-            this.error(error)
-            setDisconnected()
-        })
+        }).catch(error => this.error(error))
 
         this.on('close', () => {
-            isClosed = true
-
+            closed = true
             unsubscribeUpdate?.()
             unsubscribeStatus?.()
-
             this.status({})
         })
     }
-
-    RED.nodes.registerType('empirbus-state', EmpirbusStateNodeConstructor)
+    RED.nodes.registerType('empirbus-state', Constructor)
 }
-
-export = nodeInit
+export = init

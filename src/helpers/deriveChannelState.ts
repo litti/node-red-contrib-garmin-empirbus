@@ -116,7 +116,7 @@ const buildRange = (channel: Channel): AlexaState | null => {
     return null
 }
 
-export const deriveAlexaState = (channel: Channel): AlexaState | null => {
+export const deriveChannelState = (channel: Channel): AlexaState | null => {
     if (channel.rawValue === null)
         return null
 

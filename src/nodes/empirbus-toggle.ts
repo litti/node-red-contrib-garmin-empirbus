@@ -1,64 +1,42 @@
-import { EmpirBusChannelRepository } from 'garmin-empirbus-ts'
-import { SwitchState } from 'garmin-empirbus-ts/dist/infrastructure/repositories/EmpirBus/EmpirBusChannelRepository'
-import type { Node as NodeRedNode, NodeDef, NodeInitializer } from 'node-red'
+import type { NodeDef, NodeInitializer } from 'node-red'
+import { bindEmpirbusClientStatus } from '../helpers/bindEmpirbusClientStatus'
 import { parseChannelIds, resolveChannelIds } from '../helpers/channelHandling'
+import { getRepository } from '../helpers/getRepository'
 import { EmpirbusConfigNode } from '../types/EmpirbusConfigNode'
 import { EmpirbusToggleAndSwitchNode } from '../types/EmpirbusToggleAndSwitchNode'
+import { getResultError } from '../helpers/resultHandling'
 
-interface EmpirbusToggleNodeDef extends NodeDef {
-    acknowledge: boolean
-    channelId?: string
-    channelIds?: string
-    channelName?: string
-    config: string
-    name: string
-}
-
-const getRepository = async (node: EmpirbusToggleAndSwitchNode): Promise<EmpirBusChannelRepository | null> => {
-    if (!node.configNode)
-        return null
-    return node.configNode.getRepository()
-}
-
-const nodeInit: NodeInitializer = RED => {
-    function EmpirbusToggleNodeConstructor(this: EmpirbusToggleAndSwitchNode, config: EmpirbusToggleNodeDef) {
+interface Def extends NodeDef { acknowledge: boolean; channelId?: string; channelIds?: string; channelName?: string; config: string; name: string }
+const init: NodeInitializer = RED => {
+    function Constructor(this: EmpirbusToggleAndSwitchNode, config: Def) {
         RED.nodes.createNode(this, config)
-        this.acknowledge = config.acknowledge || false
+        this.acknowledge = !!config.acknowledge
         this.configNode = RED.nodes.getNode(config.config) as EmpirbusConfigNode | null
-        this.channelId = config.channelId ? Number(config.channelId) : undefined
+        this.channelId = config.channelId && Number.isFinite(Number(config.channelId)) ? Number(config.channelId) : undefined
         this.channelName = config.channelName || undefined
         this.channelIds = config.channelIds || ''
         this.selectedChannelIds = parseChannelIds(this.channelIds)
-
-        this.on('input', async msg => {
-            const repo = await getRepository(this)
-            if (!repo) {
-                this.error('No EmpirBus config node configured. Configure and select an EmpirBus config node first!', msg)
-                return
-            }
-
-            const ids = await resolveChannelIds(this, msg, repo)
-            if (ids.length === 0) {
-                this.error('No matching channel found', msg)
-                this.send(msg)
-                return
-            }
-
+        const unsubscribe = bindEmpirbusClientStatus(this, this.configNode)
+        this.on('close', () => unsubscribe?.())
+        this.on('input', async (msg: any, send: any, done: any) => {
             try {
-                const promises = ids.map(id => repo.toggle(id))
-                await Promise.all(promises)
-                if (this.acknowledge)
-                    msg.acknowledge = true
-                this.log(`Toggled channels ${ids.join(',')}, returning message ${JSON.stringify(msg)}`)
-                this.send(msg)
-            }
-            catch (error) {
-                this.error(error as Error, msg)
-            }
+                const repo: any = await getRepository(this)
+                if (!repo) throw new Error('No EmpirBus config node configured.')
+                const ids = await resolveChannelIds(this, msg, repo)
+                if (!ids.length) throw new Error('No matching channel found.')
+                const result = typeof repo.toggleMany === 'function'
+                    ? await repo.toggleMany(ids)
+                    : await Promise.all(ids.map((id: number) => repo.toggle(id))).then((r: any[]) => r.find(x => x.hasFailed) || r[0])
+                const error = getResultError(result)
+                if (error) {
+                    this.warn(error)
+                    throw new Error(error)
+                }
+                if (this.acknowledge) { msg.acknowledge = true; send(msg) }
+                done?.()
+            } catch (error) { done ? done(error) : this.error(error, msg) }
         })
     }
-
-    RED.nodes.registerType('empirbus-toggle', EmpirbusToggleNodeConstructor)
+    RED.nodes.registerType('empirbus-toggle', Constructor)
 }
-
-export = nodeInit
+export = init

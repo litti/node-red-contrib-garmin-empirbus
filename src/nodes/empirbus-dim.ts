@@ -1,158 +1,59 @@
-import { DimState } from 'garmin-empirbus-ts'
 import type { NodeDef, NodeInitializer } from 'node-red'
+import { bindEmpirbusClientStatus } from '../helpers/bindEmpirbusClientStatus'
 import { parseChannelIds, resolveChannelIds } from '../helpers/channelHandling'
+import { resolveDimPayload } from '../helpers/inputPayload'
+import { getRepository } from '../helpers/getRepository'
 import { EmpirbusConfigNode } from '../types/EmpirbusConfigNode'
 import { EmpirbusToggleAndSwitchNode } from '../types/EmpirbusToggleAndSwitchNode'
-import { getRepository } from '../helpers/getRepository'
-import { bindEmpirbusClientStatus } from '../helpers/bindEmpirbusClientStatus'
-import { resolveDimPayload } from '../helpers/inputPayload'
+import { getResultError } from '../helpers/resultHandling'
 
-interface EmpirbusDimNodeDef extends NodeDef {
-    acknowledge: boolean
-    channelId?: string
-    channelIds?: string
-    channelName?: string
-    onLevel?: string
-    config: string
-    name: string
+type Mode = 'raw' | 'percent' | 'normalized'
+interface Def extends NodeDef { acknowledge: boolean; channelId?: string; channelIds?: string; channelName?: string; config: string; name: string; inputMode?: Mode }
+const convert = (value: unknown, mode: Mode): { raw: number; brightness: number } => {
+    const n = Number(value)
+    if (!Number.isFinite(n)) throw new Error(`Invalid dimmer payload: ${JSON.stringify(value)}`)
+    if (mode === 'raw') {
+        if (!Number.isInteger(n) || n < 0 || n > 255) throw new Error('Raw dimmer value must be an integer from 0 to 255.')
+        return { raw: n, brightness: n / 255 * 100 }
+    }
+    if (mode === 'normalized') {
+        if (n < 0 || n > 1) throw new Error('Normalized dimmer value must be between 0 and 1.')
+        return { raw: Math.round(n * 255), brightness: n * 100 }
+    }
+    if (n < 0 || n > 100) throw new Error('Percent dimmer value must be between 0 and 100.')
+    return { raw: Math.round(n / 100 * 255), brightness: n }
 }
-
-const clampBrightness = (value: number): number =>
-    Math.max(0, Math.min(100, Math.round(value)))
-
-const toNumberOrUndefined = (value: unknown): number | undefined => {
-    if (value === undefined || value === null)
-        return undefined
-
-    const parsed = Number(value)
-    if (Number.isNaN(parsed))
-        return undefined
-
-    return parsed
-}
-
-const isOnPayload = (payload: unknown): boolean => {
-    if (typeof payload === 'boolean')
-        return payload
-
-    if (typeof payload === 'number')
-        return payload === 100
-
-    if (typeof payload !== 'string')
-        return false
-
-    const normalized = payload.trim().toLowerCase()
-    return normalized === 'on' || normalized === 'ein' || normalized === 'true' || normalized === '1'
-}
-
-const isOffPayload = (payload: unknown): boolean => {
-    if (payload === false)
-        return true
-
-    if (typeof payload === 'number')
-        return payload === 0
-
-    if (typeof payload !== 'string')
-        return false
-
-    const normalized = payload.trim().toLowerCase()
-    return normalized === 'off' || normalized === 'aus' || normalized === 'false' || normalized === '0'
-}
-
-const resolveBrightness = (payload: unknown, onLevel: number | undefined): number => {
-    if (isOffPayload(payload))
-        return 0
-
-    if (isOnPayload(payload))
-        return clampBrightness(onLevel ?? 100)
-
-    const numeric = toNumberOrUndefined(payload)
-    if (numeric === undefined)
-        return clampBrightness(onLevel ?? 100)
-
-    return clampBrightness(numeric)
-}
-
-const toDimState = (brightness: number): DimState => {
-    if (brightness <= 0)
-        return 0 as DimState
-
-    let level = brightness * 10
-    if (level < 120)
-        level = 120
-
-    return level as DimState
-}
-
-const nodeInit: NodeInitializer = RED => {
-    function EmpirbusDimNodeConstructor(this: EmpirbusToggleAndSwitchNode, config: EmpirbusDimNodeDef) {
+const init: NodeInitializer = RED => {
+    function Constructor(this: EmpirbusToggleAndSwitchNode, config: Def) {
         RED.nodes.createNode(this, config)
-        this.acknowledge = config.acknowledge || false
+        this.acknowledge = !!config.acknowledge
         this.configNode = RED.nodes.getNode(config.config) as EmpirbusConfigNode | null
-        this.channelId = config.channelId ? Number(config.channelId) : undefined
+        this.channelId = config.channelId && Number.isFinite(Number(config.channelId)) ? Number(config.channelId) : undefined
         this.channelName = config.channelName || undefined
         this.channelIds = config.channelIds || ''
         this.selectedChannelIds = parseChannelIds(this.channelIds)
-
-        const onLevel = (() => {
-            const value = toNumberOrUndefined(config.onLevel)
-            if (value === undefined)
-                return undefined
-
-            return clampBrightness(value)
-        })()
-
-        const unsubscribeState = bindEmpirbusClientStatus(this, this.configNode)
-
-        this.on('close', () => {
-            unsubscribeState?.()
-        })
-
-        this.on('input', async msg => {
-            const repo = await getRepository(this)
-            if (!repo) {
-                this.error('No EmpirBus config node configured. Configure and select an EmpirBus config node first!', msg)
-                return
-            }
-
-            const ids = await resolveChannelIds(this, msg, repo)
-            if (ids.length === 0) {
-                this.error('No matching channel found', msg)
-                this.send(msg)
-                return
-            }
-
+        const mode: Mode = ['raw', 'normalized'].includes(config.inputMode || '') ? config.inputMode as Mode : 'percent'
+        const unsubscribe = bindEmpirbusClientStatus(this, this.configNode)
+        this.on('close', () => unsubscribe?.())
+        this.on('input', async (msg: any, send: any, done: any) => {
             try {
-                const brightness = resolveBrightness(resolveDimPayload(msg.payload), onLevel)
-                const promises = ids.map(id => repo.dim(id, toDimState(brightness)))
-                const results = await Promise.all(promises)
-
-                if (results.filter(result => result.hasFailed).length === 0) {
-                    if (this.acknowledge) {
-                        msg.acknowledge = true
-                        msg.payload = {
-                            state: {
-                                brightness
-                            }
-                        }
-                    }
-                    this.log(`Dimmed channels ${ids.join(',')} ${brightness}, returning message ${JSON.stringify(msg)}`)
+                const repo = await getRepository(this)
+                if (!repo) throw new Error('No EmpirBus config node configured.')
+                const ids = await resolveChannelIds(this, msg, repo)
+                if (!ids.length) throw new Error('No matching channel found.')
+                const value = convert(resolveDimPayload(msg.payload), mode)
+                const results = ids.map(id => repo.dim(id, value.raw))
+                const error = results.map(getResultError).find(Boolean)
+                if (error) throw new Error(error)
+                if (this.acknowledge) {
+                    msg.acknowledge = true
+                    msg.payload = { state: { brightness: value.brightness } }
+                    send(msg)
                 }
-                else {
-                    results
-                        .filter(result => result.hasFailed)
-                        .forEach(result => this.error(result.errors.join(', '), msg))
-                }
-
-                this.send(msg)
-            }
-            catch (error) {
-                this.error(error as Error, msg)
-            }
+                done?.()
+            } catch (error) { done ? done(error) : this.error(error, msg) }
         })
     }
-
-    RED.nodes.registerType('empirbus-dim', EmpirbusDimNodeConstructor)
+    RED.nodes.registerType('empirbus-dim', Constructor)
 }
-
-export = nodeInit
+export = init

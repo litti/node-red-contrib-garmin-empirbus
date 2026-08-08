@@ -1,114 +1,65 @@
 "use strict";
-const channelHandling_1 = require("../helpers/channelHandling");
-const getRepository_1 = require("../helpers/getRepository");
 const bindEmpirbusClientStatus_1 = require("../helpers/bindEmpirbusClientStatus");
+const channelHandling_1 = require("../helpers/channelHandling");
 const inputPayload_1 = require("../helpers/inputPayload");
-const clampBrightness = (value) => Math.max(0, Math.min(100, Math.round(value)));
-const toNumberOrUndefined = (value) => {
-    if (value === undefined || value === null)
-        return undefined;
-    const parsed = Number(value);
-    if (Number.isNaN(parsed))
-        return undefined;
-    return parsed;
+const getRepository_1 = require("../helpers/getRepository");
+const resultHandling_1 = require("../helpers/resultHandling");
+const convert = (value, mode) => {
+    const n = Number(value);
+    if (!Number.isFinite(n))
+        throw new Error(`Invalid dimmer payload: ${JSON.stringify(value)}`);
+    if (mode === 'raw') {
+        if (!Number.isInteger(n) || n < 0 || n > 255)
+            throw new Error('Raw dimmer value must be an integer from 0 to 255.');
+        return { raw: n, brightness: n / 255 * 100 };
+    }
+    if (mode === 'normalized') {
+        if (n < 0 || n > 1)
+            throw new Error('Normalized dimmer value must be between 0 and 1.');
+        return { raw: Math.round(n * 255), brightness: n * 100 };
+    }
+    if (n < 0 || n > 100)
+        throw new Error('Percent dimmer value must be between 0 and 100.');
+    return { raw: Math.round(n / 100 * 255), brightness: n };
 };
-const isOnPayload = (payload) => {
-    if (typeof payload === 'boolean')
-        return payload;
-    if (typeof payload === 'number')
-        return payload === 100;
-    if (typeof payload !== 'string')
-        return false;
-    const normalized = payload.trim().toLowerCase();
-    return normalized === 'on' || normalized === 'ein' || normalized === 'true' || normalized === '1';
-};
-const isOffPayload = (payload) => {
-    if (payload === false)
-        return true;
-    if (typeof payload === 'number')
-        return payload === 0;
-    if (typeof payload !== 'string')
-        return false;
-    const normalized = payload.trim().toLowerCase();
-    return normalized === 'off' || normalized === 'aus' || normalized === 'false' || normalized === '0';
-};
-const resolveBrightness = (payload, onLevel) => {
-    if (isOffPayload(payload))
-        return 0;
-    if (isOnPayload(payload))
-        return clampBrightness(onLevel ?? 100);
-    const numeric = toNumberOrUndefined(payload);
-    if (numeric === undefined)
-        return clampBrightness(onLevel ?? 100);
-    return clampBrightness(numeric);
-};
-const toDimState = (brightness) => {
-    if (brightness <= 0)
-        return 0;
-    let level = brightness * 10;
-    if (level < 120)
-        level = 120;
-    return level;
-};
-const nodeInit = RED => {
-    function EmpirbusDimNodeConstructor(config) {
+const init = RED => {
+    function Constructor(config) {
         RED.nodes.createNode(this, config);
-        this.acknowledge = config.acknowledge || false;
+        this.acknowledge = !!config.acknowledge;
         this.configNode = RED.nodes.getNode(config.config);
-        this.channelId = config.channelId ? Number(config.channelId) : undefined;
+        this.channelId = config.channelId && Number.isFinite(Number(config.channelId)) ? Number(config.channelId) : undefined;
         this.channelName = config.channelName || undefined;
         this.channelIds = config.channelIds || '';
         this.selectedChannelIds = (0, channelHandling_1.parseChannelIds)(this.channelIds);
-        const onLevel = (() => {
-            const value = toNumberOrUndefined(config.onLevel);
-            if (value === undefined)
-                return undefined;
-            return clampBrightness(value);
-        })();
-        const unsubscribeState = (0, bindEmpirbusClientStatus_1.bindEmpirbusClientStatus)(this, this.configNode);
-        this.on('close', () => {
-            unsubscribeState?.();
-        });
-        this.on('input', async (msg) => {
-            const repo = await (0, getRepository_1.getRepository)(this);
-            if (!repo) {
-                this.error('No EmpirBus config node configured. Configure and select an EmpirBus config node first!', msg);
-                return;
-            }
-            const ids = await (0, channelHandling_1.resolveChannelIds)(this, msg, repo);
-            if (ids.length === 0) {
-                this.error('No matching channel found', msg);
-                this.send(msg);
-                return;
-            }
+        const mode = ['raw', 'normalized'].includes(config.inputMode || '') ? config.inputMode : 'percent';
+        const unsubscribe = (0, bindEmpirbusClientStatus_1.bindEmpirbusClientStatus)(this, this.configNode);
+        this.on('close', () => unsubscribe?.());
+        this.on('input', async (msg, send, done) => {
             try {
-                const brightness = resolveBrightness((0, inputPayload_1.resolveDimPayload)(msg.payload), onLevel);
-                const promises = ids.map(id => repo.dim(id, toDimState(brightness)));
-                const results = await Promise.all(promises);
-                if (results.filter(result => result.hasFailed).length === 0) {
-                    if (this.acknowledge) {
-                        msg.acknowledge = true;
-                        msg.payload = {
-                            state: {
-                                brightness
-                            }
-                        };
-                    }
-                    this.log(`Dimmed channels ${ids.join(',')} ${brightness}, returning message ${JSON.stringify(msg)}`);
+                const repo = await (0, getRepository_1.getRepository)(this);
+                if (!repo)
+                    throw new Error('No EmpirBus config node configured.');
+                const ids = await (0, channelHandling_1.resolveChannelIds)(this, msg, repo);
+                if (!ids.length)
+                    throw new Error('No matching channel found.');
+                const value = convert((0, inputPayload_1.resolveDimPayload)(msg.payload), mode);
+                const results = ids.map(id => repo.dim(id, value.raw));
+                const error = results.map(resultHandling_1.getResultError).find(Boolean);
+                if (error)
+                    throw new Error(error);
+                if (this.acknowledge) {
+                    msg.acknowledge = true;
+                    msg.payload = { state: { brightness: value.brightness } };
+                    send(msg);
                 }
-                else {
-                    results
-                        .filter(result => result.hasFailed)
-                        .forEach(result => this.error(result.errors.join(', '), msg));
-                }
-                this.send(msg);
+                done?.();
             }
             catch (error) {
-                this.error(error, msg);
+                done ? done(error) : this.error(error, msg);
             }
         });
     }
-    RED.nodes.registerType('empirbus-dim', EmpirbusDimNodeConstructor);
+    RED.nodes.registerType('empirbus-dim', Constructor);
 };
-module.exports = nodeInit;
+module.exports = init;
 //# sourceMappingURL=empirbus-dim.js.map

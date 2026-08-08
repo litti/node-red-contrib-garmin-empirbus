@@ -1,88 +1,58 @@
 "use strict";
-const deriveAlexaState_1 = require("../helpers/deriveAlexaState");
+const deriveChannelState_1 = require("../helpers/deriveChannelState");
 const bindEmpirbusClientStatus_1 = require("../helpers/bindEmpirbusClientStatus");
-const parseIds = (value) => {
-    if (!value)
-        return [];
-    return Array.from(new Set(value
-        .split(',')
-        .map(v => Number(v.trim()))
-        .filter(v => Number.isFinite(v))));
-};
-const isRelevantChannel = (wantedIds, fallbackId, wantedName, channel) => {
-    if (wantedIds.length > 0)
-        return wantedIds.includes(channel.id);
-    if (fallbackId !== undefined)
-        return channel.id === fallbackId;
-    if (wantedName)
-        return (channel.name || '').toLowerCase() === wantedName;
-    return true;
-};
-const hasChanged = (lastValues, channel) => {
-    const previous = lastValues[channel.id];
-    if (previous === channel.rawValue)
-        return false;
-    if (previous === undefined) {
-        lastValues[channel.id] = channel.rawValue;
-        return true;
-    }
-    lastValues[channel.id] = channel.rawValue;
-    return true;
-};
-const nodeInit = RED => {
-    function EmpirbusStateNodeConstructor(config) {
+const parseIds = (value) => Array.from(new Set((value || '').split(',').map(v => Number(v.trim())).filter(Number.isFinite)));
+const stable = (value) => JSON.stringify(value, Object.keys(value).sort());
+const init = RED => {
+    function Constructor(config) {
         RED.nodes.createNode(this, config);
         const configNode = RED.nodes.getNode(config.config);
         const wantedIds = parseIds(config.channelIds);
-        const fallbackId = config.channelId ? Number(config.channelId) : undefined;
-        const wantedName = config.channelName?.toLowerCase();
-        const context = this.context();
-        const lastValues = context.get('lastValues') || {};
-        context.set('lastValues', lastValues);
+        const parsedFallback = config.channelId === undefined || config.channelId === '' ? undefined : Number(config.channelId);
+        const fallbackId = Number.isFinite(parsedFallback) ? parsedFallback : undefined;
+        const wantedName = config.channelName?.trim().toLowerCase();
+        const lastStates = new Map();
         let unsubscribeUpdate;
-        let unsubscribeStatus;
-        let isClosed = false;
-        const setDisconnected = () => this.status({ fill: 'red', shape: 'ring', text: 'disconnected' });
+        let closed = false;
+        const unsubscribeStatus = (0, bindEmpirbusClientStatus_1.bindEmpirbusClientStatus)(this, configNode, { connectedText: 'listening' });
         if (!configNode) {
-            setDisconnected();
             this.error('No EmpirBus config node configured.');
             return;
         }
-        unsubscribeStatus = (0, bindEmpirbusClientStatus_1.bindEmpirbusClientStatus)(this, configNode, { connectedText: 'listening' });
+        const relevant = (channel) => {
+            if (wantedIds.length)
+                return wantedIds.includes(channel.id);
+            if (fallbackId !== undefined)
+                return channel.id === fallbackId;
+            if (wantedName)
+                return (channel.name || '').trim().toLowerCase() === wantedName;
+            return true;
+        };
         configNode.getRepository().then((repo) => {
-            if (isClosed)
+            if (closed)
                 return;
             unsubscribeUpdate = repo.onUpdate((channel) => {
-                if (isClosed)
+                if (closed || !relevant(channel))
                     return;
-                if (!isRelevantChannel(wantedIds, fallbackId, wantedName, channel))
-                    return;
-                if (!hasChanged(lastValues, channel))
-                    return;
-                context.set('lastValues', lastValues);
-                const state = (0, deriveAlexaState_1.deriveAlexaState)(channel);
+                const state = (0, deriveChannelState_1.deriveChannelState)(channel);
                 if (!state)
                     return;
+                const serialized = stable(state);
+                if (lastStates.get(channel.id) === serialized)
+                    return;
+                lastStates.set(channel.id, serialized);
                 const endpointId = String(channel.id);
-                this.send({
-                    acknowledge: true,
-                    endpointId,
-                    topic: `empirbus/${endpointId}`,
-                    payload: { state }
-                });
+                this.send({ acknowledge: true, endpointId, topic: `empirbus/${endpointId}`, payload: { state } });
             });
-        }).catch(error => {
-            this.error(error);
-            setDisconnected();
-        });
+        }).catch(error => this.error(error));
         this.on('close', () => {
-            isClosed = true;
+            closed = true;
             unsubscribeUpdate?.();
             unsubscribeStatus?.();
             this.status({});
         });
     }
-    RED.nodes.registerType('empirbus-state', EmpirbusStateNodeConstructor);
+    RED.nodes.registerType('empirbus-state', Constructor);
 };
-module.exports = nodeInit;
+module.exports = init;
 //# sourceMappingURL=empirbus-state.js.map

@@ -1,9 +1,13 @@
 <script type="text/x-red" data-template-name="empirbus-command">
-  <div class="form-row"><label for="node-input-name"><i class="fa fa-tag"></i> Name</label><input id="node-input-name" type="text"></div>
-  <div class="form-row"><label for="node-input-config"><i class="fa fa-cog"></i> EmpirBus Config</label><input id="node-input-config" type="text"></div>
-  <div class="form-row"><label for="node-input-acknowledge"><i class="fa fa-check"></i> Acknowledge</label><input id="node-input-acknowledge" type="checkbox" style="width:auto"></div>
-  <p>Accepts a generic command in <code>msg.payload</code>: operation, endpointId, value and optional durationMs.</p>
+<style>.empirbus-row{display:flex;align-items:flex-start;gap:8px}.empirbus-row label{flex:0 0 160px;padding-top:7px}.empirbus-input-wrapper{display:flex;flex-direction:column;flex:1}.help{font-size:.85em;opacity:.8}</style>
+<div class="form-row empirbus-row"><label for="node-input-name"><i class="fa fa-tag"></i> Name</label><input id="node-input-name" type="text"></div>
+<div class="form-row empirbus-row"><label for="node-input-config"><i class="fa fa-cog"></i> EmpirBus Config</label><input id="node-input-config" type="text"></div>
+<p>Raw telegram in <code>msg.payload</code>: <code>{messagetype, messagecmd, data, size?}</code>.</p>
+<div class="form-row empirbus-row"><label for="node-input-acknowledge"><i class="fa fa-check"></i> Acknowledge</label><div class="empirbus-input-wrapper"><input id="node-input-acknowledge" type="checkbox" style="width:auto"><span class="help">Adds <code>acknowledge:true</code> and enables the output.</span></div></div>
+
 </script>
+<script src="resources/node-red-contrib-garmin-empirbus/empirbus-editor.js"></script>
 <script type="text/javascript">
-RED.nodes.registerType('empirbus-command',{category:'garmin-empirbus',color:'#a6bbcf',defaults:{name:{value:''},config:{value:'',type:'empirbus-config',required:true},acknowledge:{value:true}},inputs:1,outputs:1,icon:'bridge.svg',label:function(){return this.name||'EmpirBus Command'}})
+RED.nodes.registerType('empirbus-command',{category:'garmin-empirbus',color:'#a6bbcf',defaults:{name:{value:''},config:{value:'',type:'empirbus-config',required:true},acknowledge:{value:false}},inputs:1,outputs:function(){return this.acknowledge?1:0},icon:'bridge.svg',label:function(){return this.name||'EmpirBus Command'},oneditprepare:function(){},oneditsave:function(){}})
 </script>
+<script type="text/x-red" data-help-name="empirbus-command"><h3>Deutsch</h3><p>Sendet ausschließlich ein validiertes Rohtelegramm. size darf fehlen und wird dann aus data.length berechnet.</p><h3>English</h3><p>Sends only a validated raw telegram. size may be omitted and is then derived from data.length.</p></script>
