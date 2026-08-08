@@ -29,6 +29,87 @@
         filterInputSelector: '.empirbus-channel-filter-input'
     }
 
+    const editorStyles = `
+        .empirbus-channel-controls {
+            display: grid;
+            grid-template-columns: auto minmax(140px, 1fr);
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 8px;
+        }
+
+        .empirbus-channel-master {
+            display: inline-flex !important;
+            align-items: center;
+            gap: 7px;
+            width: auto !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            white-space: nowrap;
+        }
+
+        .empirbus-channel-master-label {
+            line-height: 20px;
+        }
+
+        .empirbus-channel-filter-input {
+            box-sizing: border-box;
+            width: 100% !important;
+            min-width: 0;
+            margin: 0 !important;
+        }
+
+        .empirbus-channel-row {
+            display: grid;
+            grid-template-columns: 22px 44px minmax(0, 1fr);
+            align-items: center;
+            column-gap: 8px;
+            min-height: 28px;
+            padding: 2px 0;
+        }
+
+        .empirbus-channel-checkbox,
+        .empirbus-channel-master-checkbox {
+            box-sizing: border-box !important;
+            width: 16px !important;
+            min-width: 16px !important;
+            max-width: 16px !important;
+            height: 16px !important;
+            min-height: 16px !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            justify-self: center;
+            flex: none !important;
+        }
+
+        .empirbus-channel-id {
+            display: block;
+            width: 44px;
+            text-align: right;
+            font-variant-numeric: tabular-nums;
+            font-weight: 600;
+            opacity: .72;
+        }
+
+        .empirbus-channel-label {
+            display: block;
+            min-width: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+    `
+
+    const ensureStyles = (): void => {
+        if (document.getElementById('empirbus-editor-styles'))
+            return
+
+        $('<style/>', {
+            id: 'empirbus-editor-styles',
+            text: editorStyles
+        }).appendTo('head')
+    }
+
     const toSelectedIds = (value?: string): string[] =>
         String(value || '')
             .split(',')
@@ -43,22 +124,11 @@
 
     const createRow = (channel: Channel, selectedIds: string[]): JQuery => {
         const id = String(channel.id)
-        const labelText =
-            channel.description ||
-            channel.name ||
-            `Channel ${id}`
-
+        const labelText = channel.description || channel.name || `Channel ${id}`
         const row = $('<div/>').addClass('empirbus-channel-row')
-
         const checkbox = createCheckbox(id, selectedIds.includes(id))
-
-        const idLabel = $('<span/>')
-            .addClass('empirbus-channel-id')
-            .text(id)
-
-        const label = $('<span/>')
-            .addClass('empirbus-channel-label')
-            .text(labelText)
+        const idLabel = $('<span/>').addClass('empirbus-channel-id').text(id)
+        const label = $('<span/>').addClass('empirbus-channel-label').text(labelText)
 
         row.append(checkbox).append(idLabel).append(label)
 
@@ -67,23 +137,15 @@
 
     const createControls = (): JQuery => {
         const controls = $('<div/>').addClass('empirbus-channel-controls')
-
         const masterLabel = $('<label/>').addClass('empirbus-channel-master')
-
-        const masterCheckbox = $('<input type="checkbox">')
-            .addClass('empirbus-channel-master-checkbox')
-
-        const masterText = $('<span/>')
-            .addClass('empirbus-channel-master-label')
-            .text('Alle')
-
-        masterLabel.append(masterCheckbox).append(masterText)
-
+        const masterCheckbox = $('<input type="checkbox">').addClass('empirbus-channel-master-checkbox')
+        const masterText = $('<span/>').addClass('empirbus-channel-master-label').text('Alle')
         const filterInput = $('<input type="text">')
             .addClass('empirbus-channel-filter-input')
             .attr('placeholder', 'Filtern…')
             .attr('autocomplete', 'off')
 
+        masterLabel.append(masterCheckbox).append(masterText)
         controls.append(masterLabel).append(filterInput)
 
         return controls
@@ -155,14 +217,11 @@
         setMasterCheckboxState(containerSelector)
     }
 
-    const renderChannels = (
-        containerSelector: string,
-        channels: Channel[],
-        selectedIds: string[]
-    ): void => {
+    const renderChannels = (containerSelector: string, channels: Channel[], selectedIds: string[]): void => {
+        ensureStyles()
+
         const container = $(containerSelector)
         container.empty()
-
         container.append(createControls())
 
         channels.forEach(channel => {
@@ -172,22 +231,13 @@
         bindControls(containerSelector)
     }
 
-    const loadChannels = ({
-                              configId,
-                              containerSelector,
-                              selectedIds
-                          }: LoadOptions): void => {
+    const loadChannels = ({ configId, containerSelector, selectedIds }: LoadOptions): void => {
         if (!configId)
             return
 
         $.getJSON(
             `empirbus/${configId}/channels`,
-            (channels: Channel[]) =>
-                renderChannels(
-                    containerSelector,
-                    channels,
-                    selectedIds
-                )
+            (channels: Channel[]) => renderChannels(containerSelector, channels, selectedIds)
         )
     }
 
@@ -203,27 +253,26 @@
         $('#node-input-channelIds').val(ids.join(','))
 
         const acknowledge = $('#node-input-acknowledge').is(':checked')
-
         $('#node-input-acknowledge').val(acknowledge ? 'true' : 'false')
     }
 
     const bindConfigChange = ({ node, containerSelector }: BindOptions): void => {
-            const refresh = (): void => {
-                const configId = String($('#node-input-config').val() || '')
+        ensureStyles()
 
-                loadChannels({
-                    configId,
-                    containerSelector,
-                    selectedIds: toSelectedIds(node.channelIds)
-                })
-            }
+        const refresh = (): void => {
+            const configId = String($('#node-input-config').val() || '')
 
-            $('#node-input-acknowledge').prop('checked', !!node.acknowledge)
-
-            $('#node-input-config').on('change', refresh)
-
-            refresh()
+            loadChannels({
+                configId,
+                containerSelector,
+                selectedIds: toSelectedIds(node.channelIds)
+            })
         }
+
+        $('#node-input-acknowledge').prop('checked', !!node.acknowledge)
+        $('#node-input-config').on('change', refresh)
+        refresh()
+    }
 
     ;(window as unknown as {
         EmpirbusEditor: {
