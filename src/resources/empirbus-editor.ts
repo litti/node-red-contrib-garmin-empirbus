@@ -259,7 +259,15 @@
         if (node.config)
             return
 
-        const configs = RED.nodes.filterNodes({ type: 'empirbus-config' })
+        const editor = (window as unknown as {
+            RED: {
+                nodes: {
+                    filterNodes: (filter: { type: string }) => Array<{ id: string }>
+                }
+            }
+        }).RED
+
+        const configs = editor.nodes.filterNodes({ type: 'empirbus-config' })
 
         if (configs.length !== 1)
             return
