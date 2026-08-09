@@ -255,6 +255,7 @@
 
     }
 
+
     const assignSingleConfig = (node: { config?: string }): void => {
         if (node.config)
             return
@@ -266,7 +267,6 @@
                 }
             }
         }).RED
-
         const configs = editor.nodes.filterNodes({ type: 'empirbus-config' })
 
         if (configs.length !== 1)
