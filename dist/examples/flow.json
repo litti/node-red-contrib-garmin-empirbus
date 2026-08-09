@@ -58,6 +58,7 @@
     "acknowledge": true,
     "outputs": 1,
     "inputMode": "percent",
+    "onLevel": "20",
     "x": 370,
     "y": 140,
     "wires": [

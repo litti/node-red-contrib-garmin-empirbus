@@ -202,8 +202,7 @@
             return;
         editorWindow.EmpirbusEditorConfigAutoAssignmentRegistered = true;
         editorWindow.RED.events.on('nodes:add', node => {
-            var _a;
-            if (!((_a = node.type) === null || _a === void 0 ? void 0 : _a.startsWith('empirbus-')) || node.type === 'empirbus-config')
+            if (!node.type?.startsWith('empirbus-') || node.type === 'empirbus-config')
                 return;
             if (!assignSingleConfig(node))
                 return;
@@ -250,3 +249,4 @@
         saveSelectedChannelIds
     };
 })();
+//# sourceMappingURL=empirbus-editor.js.map
