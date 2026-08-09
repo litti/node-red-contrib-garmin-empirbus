@@ -74,7 +74,7 @@ Nach jedem Deploy oder Neustart wird der erste empfangene Zustand jedes relevant
 
 ### EmpirBus Switch
 
-Entspricht einem **Switch in der Garmin-Original-UI**. Der Node setzt einen Kanal explizit auf Ein oder Aus.
+Setzt einen Kanal auf den gewünschten Ein-/Aus-Zustand. Der Node erkennt anhand der zuletzt empfangenen MFD-Statusmeldung automatisch, ob der Kanal in EmpirBus als Pulse/Switch oder als Momentary-Kanal arbeitet.
 
 Bevorzugte Eingaben:
 
@@ -93,7 +93,7 @@ msg.payload = 0;
 msg.payload = { state: { power: "ON" } };
 ```
 
-Der Switch sendet den gewünschten Zielzustand immer. Der lokal bekannte Status wird nicht verwendet, um einen Befehl zu unterdrücken.
+Bei Pulse-Kanälen wird der gewünschte Zustand direkt gesendet. Bei Momentary-Kanälen vergleicht der Node den gewünschten Zustand mit dem zuletzt gemeldeten <code>onOffStatus</code> und sendet nur bei einer Abweichung einen kurzen Press/Release-Impuls von 150 ms. Ist Typ oder Zustand noch unbekannt, wird kein Befehl gesendet. Der tatsächliche EmpirBus-Status bleibt die Source of Truth.
 
 ### EmpirBus Button
 
@@ -144,6 +144,8 @@ Beispiel im Percent-Modus:
 ```javascript
 msg.payload = 50;
 ```
+
+Für <code>ON</code> kann im Feld <b>ON level</b> ein eigener Einschaltwert hinterlegt werden. Der Wert verwendet dasselbe Format wie der gewählte Eingabemodus. Bleibt das Feld leer, wird der jeweilige Maximalwert verwendet. <code>OFF</code> setzt immer 0.
 
 Ungültige Werte werden abgelehnt und nicht automatisch begrenzt.
 
@@ -197,9 +199,9 @@ Most nodes can resolve channels from selected channel checkboxes, a dynamic `msg
 
 - **EmpirBus Config** — shared Garmin EmpirBus WebSocket connection.
 - **EmpirBus State** — receives and normalizes channel state changes.
-- **EmpirBus Switch** — equivalent to a Garmin UI **Switch** and explicitly sets ON/OFF.
+- **EmpirBus Switch** — sets a requested ON/OFF target and automatically uses pulse or momentary control based on the last received MFD status type.
 - **EmpirBus Button** — equivalent to a Garmin UI **Button / SendMomentary** and supports Short Press, Long Press and Direct control.
-- **EmpirBus Dimmer** — accepts raw, percent or normalized dimming values.
+- **EmpirBus Dimmer** — accepts raw, percent or normalized dimming values and supports a configurable ON level.
 - **EmpirBus Toggle** — inverts the last known channel state and requires a known state.
 - **EmpirBus Command** — advanced raw-command escape hatch for special cases and diagnostics.
 - **EmpirBus Debug** — passively observes and filters raw RX/TX EmpirBus traffic.

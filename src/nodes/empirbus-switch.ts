@@ -27,9 +27,10 @@ const init: NodeInitializer = RED => {
                 if (!ids.length) throw new Error('No matching channel found.')
                 const power = resolvePower(msg.payload)
                 if (power === undefined) throw new Error(`Invalid switch payload: ${JSON.stringify(msg.payload)}`)
-                const results = await Promise.all(ids.map(id => repo.switch(id, power)))
-                const error = results.map(getResultError).find(Boolean)
-                if (error) throw new Error(error)
+                const result = await repo.switchMany(ids, power)
+                const error = getResultError(result)
+                if (error)
+                    throw new Error(error)
                 if (this.acknowledge) {
                     msg.acknowledge = true
                     msg.payload = { state: { power } }

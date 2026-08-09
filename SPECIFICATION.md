@@ -297,11 +297,14 @@ Invalid numeric configuration must not accidentally become `NaN`-based filtering
 
 ## 10. EmpirBus Switch
 
-### 10.1 Garmin UI equivalent
+### 10.1 Purpose
 
-`EmpirBus Switch` corresponds to a **Switch in the original Garmin UI**.
+`EmpirBus Switch` means “make this channel reach the requested ON/OFF target state”.
 
-It means “set this channel explicitly ON or OFF”. It is not a momentary action.
+The user does not select a protocol control mode. The repository learns the required control behavior from the most recently received MFD status type for each channel.
+
+- incoming MFD `messagecmd = 0` → `pulse`
+- incoming MFD `messagecmd = 1` → `momentary`
 
 ### 10.2 Accepted inputs
 
@@ -312,42 +315,39 @@ msg.payload = "ON";
 msg.payload = "OFF";
 ```
 
-String matching is case-insensitive, so all capitalization combinations are valid.
-
-Also accepted:
+String matching is case-insensitive. Also accepted:
 
 ```js
 msg.payload = true;
 msg.payload = false;
 msg.payload = 1;
 msg.payload = 0;
+msg.payload = { state: { power: "ON" } };
 ```
 
-Structured state form:
+### 10.3 Pulse channels
 
-```js
-msg.payload = {
-    state: {
-        power: "ON"
-    }
-};
-```
+For a channel whose last MFD status type is `pulse`, every valid target request is sent explicitly. Cached ON/OFF state must not suppress the command.
 
-Existing compatibility aliases may remain supported.
+### 10.4 Momentary channels
 
-### 10.3 Behavior
+For a channel whose last MFD status type is `momentary`, the requested target is compared with the repository `onOffStatus`.
 
-For every resolved channel ID:
+- requested state already reached → no telegram
+- requested state differs → press, wait 150 ms, release
+- current state unknown → fail without sending
 
-1. normalize requested power,
-2. call repository `switch(id, power)`,
-3. do not compare against a local Node-RED state before sending.
+The repository must not optimistically change `onOffStatus`. The next received EmpirBus status remains the source of truth.
 
-The lower-level repository defines the explicit switch semantics and must not suppress the command because of cache state.
+### 10.5 Unknown or unsupported type
 
-### 10.4 Multiple channels
+If the MFD type is unknown, or the channel type is not valid for switch semantics, no command is sent and the operation fails.
 
-All selected/resolved IDs receive the requested target state.
+### 10.6 Multiple channels
+
+All channels are validated before transmission. If one selected channel has an unknown/unsupported MFD type or a momentary channel has no known ON/OFF state, the whole request fails without partial transmission.
+
+Mixed pulse and momentary channels are allowed once all channels can be validated.
 
 ## 11. EmpirBus Button
 
@@ -552,7 +552,28 @@ Do not silently clamp:
 - percent outside `0..100`,
 - normalized outside `0..1`.
 
-### 13.4 Acknowledge
+
+### 13.4 ON level
+
+The node supports a configurable `ON level`.
+
+- it uses the same unit/domain as the configured input mode,
+- empty means the maximum value of that input mode,
+- an `ON` input sends the configured ON level,
+- an `OFF` input always sends zero,
+- direct numeric dimmer values continue to use the configured input mode.
+
+Examples:
+
+```text
+input mode: percent, ON level: 20
+input mode: raw, ON level: 144
+input mode: normalized, ON level: 0.2
+```
+
+The configured ON level is validated with the same rules as a normal dimmer value.
+
+### 13.5 Acknowledge
 
 When enabled, preserve the established brightness acknowledgement shape.
 

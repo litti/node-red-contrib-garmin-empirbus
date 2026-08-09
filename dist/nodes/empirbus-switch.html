@@ -14,19 +14,19 @@ RED.nodes.registerType('empirbus-switch',{category:'garmin-empirbus',color:'#a6b
 </script>
 <script type="text/x-red" data-help-name="empirbus-switch">
 <h3>Deutsch</h3>
-<p>Entspricht einem <b>Switch</b> in der Garmin-Original-UI und setzt einen oder mehrere Kanäle explizit auf Ein oder Aus.</p>
+<p>Setzt einen oder mehrere Kanäle auf den gewünschten Ein-/Aus-Zustand. Der Node erkennt anhand der zuletzt empfangenen MFD-Statusmeldung automatisch, ob ein Kanal als Pulse/Switch oder Momentary arbeitet.</p>
 <p><b>Eingang</b></p>
 <p>Unterstützt <code>ON</code>/<code>OFF</code> unabhängig von Groß-/Kleinschreibung, außerdem <code>true</code>/<code>false</code>, <code>1</code>/<code>0</code> sowie <code>{ state: { power: "ON" } }</code>.</p>
-<p>Der gewünschte Zustand wird immer gesendet. Ein bereits im Repository bekannter gleicher Zustand unterdrückt den Befehl nicht.</p>
+<p>Pulse-Kanäle erhalten einen expliziten Ein-/Aus-Befehl. Momentary-Kanäle erhalten nur dann einen 150-ms-Tastendruck, wenn der gewünschte Zustand vom zuletzt gemeldeten Zustand abweicht. Ist Typ oder Zustand noch unbekannt, wird nichts gesendet.</p>
 <p><b>Kanäle</b></p>
 <p>Mehrere ausgewählte Kanäle werden gemeinsam geschaltet. Eine dynamische Channel ID kann über <code>msg.topic = "empirbus/&lt;id&gt;"</code> übergeben werden.</p>
 <p><b>Acknowledge</b></p>
 <p>Ist Acknowledge aktiviert, wird nach erfolgreicher Verarbeitung eine kompatible Bestätigungsnachricht am Ausgang ausgegeben. Ohne Acknowledge besitzt der Node keinen Ausgang.</p>
 <h3>English</h3>
-<p>Equivalent to a <b>Switch</b> in the original Garmin UI and explicitly sets one or more channels to on or off.</p>
+<p>Sets one or more channels to the requested ON/OFF target. The node automatically learns from the last received MFD status whether each channel uses pulse/switch or momentary control.</p>
 <p><b>Input</b></p>
 <p>Accepts case-insensitive <code>ON</code>/<code>OFF</code>, as well as <code>true</code>/<code>false</code>, <code>1</code>/<code>0</code> and <code>{ state: { power: "ON" } }</code>.</p>
-<p>The requested state is always sent. A matching state already known by the repository does not suppress the command.</p>
+<p>Pulse channels receive an explicit ON/OFF command. Momentary channels receive a 150 ms press only when the requested state differs from the last reported state. Nothing is sent while type or required state is unknown.</p>
 <p><b>Channels</b></p>
 <p>Multiple selected channels are switched together. A dynamic channel ID can be supplied with <code>msg.topic = "empirbus/&lt;id&gt;"</code>.</p>
 <p><b>Acknowledge</b></p>

@@ -261,6 +261,7 @@
         id?: string
         type?: string
         config?: string
+        dirty?: boolean
     }
 
     type EditorApi = {
@@ -268,7 +269,7 @@
             on: (event: string, handler: (node: EditorNode) => void) => void
         }
         nodes: {
-            filterNodes: (filter: { type: string }) => Array<{ id: string }>
+            eachConfig: (callback: (node: EditorNode) => void) => void
             dirty: (dirty: boolean) => void
         }
         view: {
@@ -287,9 +288,14 @@
         if (node.config)
             return false
 
-        const configs = editorWindow.RED.nodes.filterNodes({ type: 'empirbus-config' })
+        const configs: EditorNode[] = []
 
-        if (configs.length !== 1)
+        editorWindow.RED.nodes.eachConfig(configNode => {
+            if (configNode.type === 'empirbus-config')
+                configs.push(configNode)
+        })
+
+        if (configs.length !== 1 || !configs[0].id)
             return false
 
         node.config = configs[0].id
@@ -309,6 +315,7 @@
             if (!assignSingleConfig(node))
                 return
 
+            node.dirty = true
             editorWindow.RED.nodes.dirty(true)
             editorWindow.RED.view.redraw()
         })

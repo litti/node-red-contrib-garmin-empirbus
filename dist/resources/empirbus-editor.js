@@ -187,8 +187,12 @@
     const assignSingleConfig = (node) => {
         if (node.config)
             return false;
-        const configs = editorWindow.RED.nodes.filterNodes({ type: 'empirbus-config' });
-        if (configs.length !== 1)
+        const configs = [];
+        editorWindow.RED.nodes.eachConfig(configNode => {
+            if (configNode.type === 'empirbus-config')
+                configs.push(configNode);
+        });
+        if (configs.length !== 1 || !configs[0].id)
             return false;
         node.config = configs[0].id;
         return true;
@@ -198,10 +202,12 @@
             return;
         editorWindow.EmpirbusEditorConfigAutoAssignmentRegistered = true;
         editorWindow.RED.events.on('nodes:add', node => {
-            if (!node.type?.startsWith('empirbus-') || node.type === 'empirbus-config')
+            var _a;
+            if (!((_a = node.type) === null || _a === void 0 ? void 0 : _a.startsWith('empirbus-')) || node.type === 'empirbus-config')
                 return;
             if (!assignSingleConfig(node))
                 return;
+            node.dirty = true;
             editorWindow.RED.nodes.dirty(true);
             editorWindow.RED.view.redraw();
         });
@@ -244,4 +250,3 @@
         saveSelectedChannelIds
     };
 })();
-//# sourceMappingURL=empirbus-editor.js.map

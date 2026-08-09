@@ -26,8 +26,8 @@ const init = RED => {
                 const power = (0, inputPayload_1.resolvePower)(msg.payload);
                 if (power === undefined)
                     throw new Error(`Invalid switch payload: ${JSON.stringify(msg.payload)}`);
-                const results = await Promise.all(ids.map(id => repo.switch(id, power)));
-                const error = results.map(resultHandling_1.getResultError).find(Boolean);
+                const result = await repo.switchMany(ids, power);
+                const error = (0, resultHandling_1.getResultError)(result);
                 if (error)
                     throw new Error(error);
                 if (this.acknowledge) {

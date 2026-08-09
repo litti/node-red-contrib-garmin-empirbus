@@ -207,3 +207,19 @@ For changes:
 
 - `EmpirBus Debug` is passive and must never send traffic. Keep its output suitable for a standard Node-RED Debug node.
 - In `EmpirBus Button`, show `Duration (ms)` only for Long Press. Short Press is fixed at 150 ms.
+
+## Switch MFD-type handling
+
+- Do not expose a manual pulse/momentary selector in the Switch node.
+- Use the repository-learned MFD status type.
+- Pulse status (`messagecmd 0`) uses explicit ON/OFF switch commands.
+- Momentary status (`messagecmd 1`) uses a 150 ms press/release only when the requested state differs from `onOffStatus`.
+- Never optimistically update the cached state after a momentary switch request.
+- Validate all selected channels before a multi-channel switch operation to avoid partial execution.
+
+## Dimmer ON level
+
+- Preserve the configurable ON level.
+- ON level uses the configured dimmer input domain: raw, percent, or normalized.
+- Empty ON level means the maximum for the selected domain.
+- OFF always maps to zero.

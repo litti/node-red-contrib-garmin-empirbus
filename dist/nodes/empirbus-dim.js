@@ -4,6 +4,13 @@ const channelHandling_1 = require("../helpers/channelHandling");
 const inputPayload_1 = require("../helpers/inputPayload");
 const getRepository_1 = require("../helpers/getRepository");
 const resultHandling_1 = require("../helpers/resultHandling");
+const getMaximumValue = (mode) => {
+    if (mode === 'raw')
+        return 255;
+    if (mode === 'normalized')
+        return 1;
+    return 100;
+};
 const convert = (value, mode) => {
     const n = Number(value);
     if (!Number.isFinite(n))
@@ -22,6 +29,32 @@ const convert = (value, mode) => {
         throw new Error('Percent dimmer value must be between 0 and 100.');
     return { raw: Math.round(n / 100 * 255), brightness: n };
 };
+const resolveDimPower = (payload) => {
+    if (typeof payload === 'boolean')
+        return payload ? 'ON' : 'OFF';
+    if (typeof payload === 'string') {
+        const normalized = payload.trim().toLowerCase();
+        if (['on', 'ein', 'true'].includes(normalized))
+            return 'ON';
+        if (['off', 'aus', 'false'].includes(normalized))
+            return 'OFF';
+        return undefined;
+    }
+    if (!payload || typeof payload !== 'object')
+        return undefined;
+    const value = payload;
+    if (value.power === undefined && value.state?.power === undefined)
+        return undefined;
+    return (0, inputPayload_1.resolvePower)(payload);
+};
+const resolveValue = (payload, mode, onLevel) => {
+    const power = resolveDimPower(payload);
+    if (power === 'ON')
+        return convert(onLevel, mode);
+    if (power === 'OFF')
+        return convert(0, mode);
+    return convert((0, inputPayload_1.resolveDimPayload)(payload), mode);
+};
 const init = RED => {
     function Constructor(config) {
         RED.nodes.createNode(this, config);
@@ -32,6 +65,7 @@ const init = RED => {
         this.channelIds = config.channelIds || '';
         this.selectedChannelIds = (0, channelHandling_1.parseChannelIds)(this.channelIds);
         const mode = ['raw', 'normalized'].includes(config.inputMode || '') ? config.inputMode : 'percent';
+        const configuredOnLevel = config.onLevel === undefined || config.onLevel === '' ? getMaximumValue(mode) : Number(config.onLevel);
         const unsubscribe = (0, bindEmpirbusClientStatus_1.bindEmpirbusClientStatus)(this, this.configNode);
         this.on('close', () => unsubscribe?.());
         this.on('input', async (msg, send, done) => {
@@ -42,7 +76,7 @@ const init = RED => {
                 const ids = await (0, channelHandling_1.resolveChannelIds)(this, msg, repo);
                 if (!ids.length)
                     throw new Error('No matching channel found.');
-                const value = convert((0, inputPayload_1.resolveDimPayload)(msg.payload), mode);
+                const value = resolveValue(msg.payload, mode, configuredOnLevel);
                 const results = ids.map(id => repo.dim(id, value.raw));
                 const error = results.map(resultHandling_1.getResultError).find(Boolean);
                 if (error)

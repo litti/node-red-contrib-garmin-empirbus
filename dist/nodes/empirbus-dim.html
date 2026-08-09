@@ -4,19 +4,22 @@
 <div class="form-row empirbus-row"><label for="node-input-config"><i class="fa fa-cog"></i> EmpirBus Config</label><input id="node-input-config" type="text"></div>
 <div class="form-row empirbus-row"><label for="node-input-channelId">Channel ID</label><input id="node-input-channelId" type="number"></div>
 <div class="form-row empirbus-row"><label for="node-input-channelName">Channel Name</label><input id="node-input-channelName" type="text"></div><div class="form-row empirbus-row"><label for="node-input-inputMode">Input format</label><select id="node-input-inputMode"><option value="raw">Raw 0–255</option><option value="percent">Percent 0–100</option><option value="normalized">Normalized 0–1</option></select></div>
+<div class="form-row empirbus-row"><label for="node-input-onLevel">ON level</label><div class="empirbus-input-wrapper"><input id="node-input-onLevel" type="number"><span id="empirbus-dim-on-level-help" class="help"></span></div></div>
 <div class="form-row empirbus-row"><label for="node-input-acknowledge"><i class="fa fa-check"></i> Acknowledge</label><div class="empirbus-input-wrapper"><input id="node-input-acknowledge" type="checkbox" style="width:auto"><span class="help">Adds <code>acknowledge:true</code> and enables the output.</span></div></div>
 <input type="hidden" id="node-input-outputs">
 <div class="form-row"><label>Channels</label><div id="empirbus-dim-channels"></div><input type="hidden" id="node-input-channelIds"><span class="help">Selected IDs take precedence over message IDs, single ID and channel name.</span></div>
 </script>
 <script src="resources/node-red-contrib-garmin-empirbus/empirbus-editor.js"></script>
 <script type="text/javascript">
-RED.nodes.registerType('empirbus-dim',{category:'garmin-empirbus',color:'#a6bbcf',defaults:{name:{value:''},config:{value:'',type:'empirbus-config',required:true},channelId:{value:''},channelName:{value:''},channelIds:{value:''},acknowledge:{value:false},outputs:{value:0},inputMode:{value:'percent'}},inputs:1,icon:'empirbus-dim.svg',label:function(){return this.name||'EmpirBus Dimmer'},oneditprepare:function(){EmpirbusEditor.bindConfigChange({node:this,containerSelector:'#empirbus-dim-channels'})},oneditsave:function(){EmpirbusEditor.saveSelectedChannelIds('#empirbus-dim-channels')}})
+RED.nodes.registerType('empirbus-dim',{category:'garmin-empirbus',color:'#a6bbcf',defaults:{name:{value:''},config:{value:'',type:'empirbus-config',required:true},channelId:{value:''},channelName:{value:''},channelIds:{value:''},acknowledge:{value:false},outputs:{value:0},inputMode:{value:'percent'},onLevel:{value:''}},inputs:1,icon:'empirbus-dim.svg',label:function(){return this.name||'EmpirBus Dimmer'},oneditprepare:function(){EmpirbusEditor.bindConfigChange({node:this,containerSelector:'#empirbus-dim-channels'});var updateOnLevel=function(){var mode=$('#node-input-inputMode').val();var input=$('#node-input-onLevel');var help=$('#empirbus-dim-on-level-help');if(mode==='raw'){input.attr({min:0,max:255,step:1});help.text('0–255. Empty means 255. Used when the input is ON.')}else if(mode==='normalized'){input.attr({min:0,max:1,step:0.01});help.text('0–1. Empty means 1. Used when the input is ON.')}else{input.attr({min:0,max:100,step:1});help.text('0–100 %. Empty means 100 %. Used when the input is ON.')}};$('#node-input-inputMode').on('change',updateOnLevel);updateOnLevel()},oneditsave:function(){EmpirbusEditor.saveSelectedChannelIds('#empirbus-dim-channels')}})
 </script>
 <script type="text/x-red" data-help-name="empirbus-dim">
 <h3>Deutsch</h3>
 <p>Setzt den Dimmwert eines oder mehrerer EmpirBus-Kanäle.</p>
 <p><b>Input Mode</b></p>
 <p><code>Raw</code>: Ganzzahl 0 bis 255. <code>Percent</code>: Wert 0 bis 100. <code>Normalized</code>: Wert 0.0 bis 1.0. Prozent- und normierte Werte werden intern in den EmpirBus-Rohwert umgerechnet.</p>
+<p><b>ON level</b></p>
+<p>Legt fest, welcher Dimmwert bei <code>ON</code> gesendet wird. Der Wert verwendet dasselbe Format wie <b>Input format</b>. Bleibt das Feld leer, wird der Maximalwert verwendet. <code>OFF</code> setzt immer 0.</p>
 <p>Ungültige Werte werden abgelehnt und nicht still auf den erlaubten Bereich begrenzt.</p>
 <p>Der Wert kann direkt in <code>msg.payload</code> oder in einem vom State-Format unterstützten verschachtelten Wert stehen.</p>
 <p>Mehrere Kanäle werden unterstützt. Eine dynamische Channel ID kann über <code>msg.topic = "empirbus/&lt;id&gt;"</code> angegeben werden.</p>
@@ -26,6 +29,8 @@ RED.nodes.registerType('empirbus-dim',{category:'garmin-empirbus',color:'#a6bbcf
 <p>Sets the dimming level of one or more EmpirBus channels.</p>
 <p><b>Input Mode</b></p>
 <p><code>Raw</code>: integer 0 to 255. <code>Percent</code>: value 0 to 100. <code>Normalized</code>: value 0.0 to 1.0. Percent and normalized values are converted to the EmpirBus raw value internally.</p>
+<p><b>ON level</b></p>
+<p>Defines the dimming value sent for <code>ON</code>. The value uses the same format as <b>Input format</b>. If left empty, the maximum value is used. <code>OFF</code> always sets 0.</p>
 <p>Invalid values are rejected and are not silently clamped.</p>
 <p>The value can be supplied directly in <code>msg.payload</code> or in a nested value supported by the state-compatible input parser.</p>
 <p>Multiple channels are supported. A dynamic channel ID can be supplied with <code>msg.topic = "empirbus/&lt;id&gt;"</code>.</p>

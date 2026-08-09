@@ -187,8 +187,12 @@
     const assignSingleConfig = (node) => {
         if (node.config)
             return false;
-        const configs = editorWindow.RED.nodes.filterNodes({ type: 'empirbus-config' });
-        if (configs.length !== 1)
+        const configs = [];
+        editorWindow.RED.nodes.eachConfig(configNode => {
+            if (configNode.type === 'empirbus-config')
+                configs.push(configNode);
+        });
+        if (configs.length !== 1 || !configs[0].id)
             return false;
         node.config = configs[0].id;
         return true;
@@ -203,6 +207,7 @@
                 return;
             if (!assignSingleConfig(node))
                 return;
+            node.dirty = true;
             editorWindow.RED.nodes.dirty(true);
             editorWindow.RED.view.redraw();
         });

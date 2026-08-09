@@ -1,14 +1,21 @@
 <script type="text/x-red" data-template-name="empirbus-debug">
-<style>.empirbus-row{display:flex;align-items:flex-start;gap:8px}.empirbus-row label{flex:0 0 160px;padding-top:7px}.empirbus-input-wrapper{display:flex;flex-direction:column;flex:1}.help{font-size:.85em;opacity:.8}</style>
+<style>
+.empirbus-row{display:flex;align-items:flex-start;gap:8px}
+.empirbus-row>label{flex:0 0 160px;padding-top:7px}
+.empirbus-input-wrapper{display:flex;flex-direction:column;align-items:flex-start;gap:8px;flex:1;padding-top:4px}
+.empirbus-traffic-option{display:inline-flex!important;align-items:center;gap:8px;width:auto!important;max-width:none!important;margin:0!important;padding:0!important;white-space:nowrap}
+.empirbus-traffic-option input[type=checkbox]{width:16px!important;min-width:16px!important;max-width:16px!important;height:16px!important;margin:0!important;flex:none!important}
+.help{font-size:.85em;opacity:.8}
+</style>
 <div class="form-row empirbus-row"><label for="node-input-name"><i class="fa fa-tag"></i> Name</label><input id="node-input-name" type="text"></div>
 <div class="form-row empirbus-row"><label for="node-input-config"><i class="fa fa-cog"></i> EmpirBus Config</label><input id="node-input-config" type="text"></div>
 <div class="form-row empirbus-row"><label for="node-input-direction">Direction</label><select id="node-input-direction"><option value="both">Both</option><option value="rx">Received</option><option value="tx">Sent</option></select></div>
 <div class="form-row empirbus-row"><label for="node-input-scope">Scope</label><select id="node-input-scope"><option value="all">All channels</option><option value="selected">Selected channels</option></select></div>
 <div class="form-row empirbus-row"><label>Traffic</label><div class="empirbus-input-wrapper">
-<label style="flex:none;padding:0"><input id="node-input-controlCommands" type="checkbox" style="width:auto"> Control commands</label>
-<label style="flex:none;padding:0"><input id="node-input-statusMessages" type="checkbox" style="width:auto"> Status messages</label>
-<label style="flex:none;padding:0"><input id="node-input-systemTraffic" type="checkbox" style="width:auto"> System traffic</label>
-<label style="flex:none;padding:0"><input id="node-input-heartbeat" type="checkbox" style="width:auto"> Heartbeat</label>
+<label class="empirbus-traffic-option"><input id="node-input-controlCommands" type="checkbox"> <span>Control commands</span></label>
+<label class="empirbus-traffic-option"><input id="node-input-statusMessages" type="checkbox"> <span>Status messages</span></label>
+<label class="empirbus-traffic-option"><input id="node-input-systemTraffic" type="checkbox"> <span>System traffic</span></label>
+<label class="empirbus-traffic-option"><input id="node-input-heartbeat" type="checkbox"> <span>Heartbeat</span></label>
 </div></div>
 <div class="form-row" id="empirbus-debug-channel-row"><label>Channels</label><div id="empirbus-debug-channels"></div><input type="hidden" id="node-input-channelIds"><span class="help">Used when Scope is Selected channels.</span></div>
 </script>
