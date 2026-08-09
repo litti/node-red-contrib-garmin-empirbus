@@ -3,13 +3,13 @@
 <div class="form-row empirbus-row"><label for="node-input-name"><i class="fa fa-tag"></i> Name</label><input id="node-input-name" type="text"></div>
 <div class="form-row empirbus-row"><label for="node-input-config"><i class="fa fa-cog"></i> EmpirBus Config</label><input id="node-input-config" type="text"></div>
 <p>Raw telegram in <code>msg.payload</code>: <code>{messagetype, messagecmd, data, size?}</code>.</p>
-<div class="form-row empirbus-row"><label for="node-input-acknowledge"><i class="fa fa-check"></i> Acknowledge</label><div class="empirbus-input-wrapper"><input id="node-input-acknowledge" type="checkbox" style="width:auto"><span class="help">Adds <code>acknowledge:true</code> and enables the output.</span></div></div>
+<div class="form-row empirbus-row"><label for="node-input-acknowledgeMode"><i class="fa fa-check"></i> Acknowledge</label><div class="empirbus-input-wrapper"><select id="node-input-acknowledgeMode"><option value="none">None</option><option value="immediate">Immediately</option><option value="completed">After execution</option></select><span class="help">None disables the output. Immediately acknowledges after validation when execution starts. After execution acknowledges only after successful completion.</span></div></div>
 <input type="hidden" id="node-input-outputs">
 
 </script>
 <script src="resources/node-red-contrib-garmin-empirbus/empirbus-editor.js"></script>
 <script type="text/javascript">
-RED.nodes.registerType('empirbus-command',{category:'garmin-empirbus',color:'#a6bbcf',defaults:{name:{value:''},config:{value:'',type:'empirbus-config',required:true},acknowledge:{value:false},outputs:{value:0}},inputs:1,icon:'empirbus-command.svg',label:function(){return this.name||'EmpirBus Command'},oneditprepare:function(){EmpirbusEditor.bindAcknowledgeOutput(this)},oneditsave:function(){}})
+RED.nodes.registerType('empirbus-command',{category:'garmin-empirbus',color:'#a6bbcf',defaults:{name:{value:''},config:{value:'',type:'empirbus-config',required:true},acknowledge:{value:false},acknowledgeMode:{value:''},outputs:{value:0}},inputs:1,icon:'empirbus-command.svg',label:function(){return this.name||'EmpirBus Command'},oneditprepare:function(){EmpirbusEditor.bindAcknowledgeOutput(this)},oneditsave:function(){}})
 </script>
 <script type="text/x-red" data-help-name="empirbus-command">
 <h3>Deutsch</h3>
@@ -25,5 +25,5 @@ RED.nodes.registerType('empirbus-command',{category:'garmin-empirbus',color:'#a6
 <p>The telegram is strictly validated before sending. <code>size</code> may be omitted and is then derived from the data length. Additional properties are not transmitted.</p>
 <p>For normal flows prefer <b>Switch</b>, <b>Button</b>, <b>Toggle</b> and <b>Dimmer</b>. Details of the EmpirBus telegram format belong in the technical documentation of <code>garmin-empirbus-ts</code>.</p>
 <p><b>Acknowledge</b></p>
-<p>When enabled, a compatible acknowledgement message is emitted after successful handoff. Without acknowledgement the node has no output.</p>
+<p>Acknowledge can be disabled, emitted immediately after validation/start, or emitted after successful execution.</p>
 </script>

@@ -4,6 +4,7 @@ const bindEmpirbusClientStatus_1 = require("../helpers/bindEmpirbusClientStatus"
 const channelHandling_1 = require("../helpers/channelHandling");
 const getRepository_1 = require("../helpers/getRepository");
 const resultHandling_1 = require("../helpers/resultHandling");
+const acknowledge_1 = require("../helpers/acknowledge");
 const direct = (payload) => {
     const value = typeof payload === 'object' && payload !== null && 'action' in payload ? payload.action : payload;
     if (typeof value === 'boolean')
@@ -26,7 +27,7 @@ const bounded = (value, min, max, fallback) => {
 const init = RED => {
     function Constructor(config) {
         RED.nodes.createNode(this, config);
-        this.acknowledge = !!config.acknowledge;
+        const acknowledgeMode = (0, acknowledge_1.resolveAcknowledgeMode)(config.acknowledgeMode, config.acknowledge);
         this.configNode = RED.nodes.getNode(config.config);
         this.channelId = config.channelId && Number.isFinite(Number(config.channelId)) ? Number(config.channelId) : undefined;
         this.channelName = config.channelName || undefined;
@@ -56,6 +57,7 @@ const init = RED => {
                     const pressed = direct(msg.payload);
                     if (pressed === undefined)
                         throw new Error(`Invalid direct button payload: ${JSON.stringify(msg.payload)}`);
+                    (0, acknowledge_1.sendAcknowledge)(acknowledgeMode, 'immediate', msg, send);
                     await run(repo, ids, pressed);
                 }
                 else {
@@ -65,6 +67,7 @@ const init = RED => {
                         return;
                     }
                     this.busy = true;
+                    (0, acknowledge_1.sendAcknowledge)(acknowledgeMode, 'immediate', msg, send);
                     this.status({ fill: 'yellow', shape: 'dot', text: 'busy' });
                     try {
                         if (execution === 'parallel') {
@@ -87,10 +90,7 @@ const init = RED => {
                         this.status({ fill: 'green', shape: 'dot', text: 'connected' });
                     }
                 }
-                if (this.acknowledge) {
-                    msg.acknowledge = true;
-                    send(msg);
-                }
+                (0, acknowledge_1.sendAcknowledge)(acknowledgeMode, 'completed', msg, send);
                 done?.();
             }
             catch (error) {
@@ -102,4 +102,3 @@ const init = RED => {
     RED.nodes.registerType('empirbus-button', Constructor);
 };
 module.exports = init;
-//# sourceMappingURL=empirbus-button.js.map

@@ -37,7 +37,7 @@
     "copy:icons": "copyfiles -u 2 \"src/nodes/icons/*.svg\" dist/nodes"
   },
   "dependencies": {
-    "garmin-empirbus-ts": "^0.1.30"
+    "garmin-empirbus-ts": "^0.1.31"
   },
   "devDependencies": {
     "@types/node": "20",

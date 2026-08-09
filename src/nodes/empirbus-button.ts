@@ -6,10 +6,11 @@ import { getRepository } from '../helpers/getRepository'
 import { EmpirbusConfigNode } from '../types/EmpirbusConfigNode'
 import { EmpirbusToggleAndSwitchNode } from '../types/EmpirbusToggleAndSwitchNode'
 import { getResultError } from '../helpers/resultHandling'
+import { resolveAcknowledgeMode, sendAcknowledge } from '../helpers/acknowledge'
 
 type Mode = 'short' | 'long' | 'direct'
 type Execution = 'sequential' | 'parallel'
-interface Def extends NodeDef { acknowledge: boolean; channelId?: string; channelIds?: string; channelName?: string; config: string; name: string; mode?: Mode; durationMs?: string|number; execution?: Execution; channelDelayMs?: string|number }
+interface Def extends NodeDef { acknowledge?: boolean; acknowledgeMode?: string; channelId?: string; channelIds?: string; channelName?: string; config: string; name: string; mode?: Mode; durationMs?: string|number; execution?: Execution; channelDelayMs?: string|number }
 const direct = (payload: unknown): boolean | undefined => {
     const value = typeof payload === 'object' && payload !== null && 'action' in payload ? (payload as any).action : payload
     if (typeof value === 'boolean') return value
@@ -27,7 +28,7 @@ const bounded = (value: unknown, min: number, max: number, fallback: number) => 
 const init: NodeInitializer = RED => {
     function Constructor(this: EmpirbusToggleAndSwitchNode & { busy?: boolean }, config: Def) {
         RED.nodes.createNode(this, config)
-        this.acknowledge = !!config.acknowledge
+        const acknowledgeMode = resolveAcknowledgeMode(config.acknowledgeMode, config.acknowledge)
         this.configNode = RED.nodes.getNode(config.config) as EmpirbusConfigNode | null
         this.channelId = config.channelId && Number.isFinite(Number(config.channelId)) ? Number(config.channelId) : undefined
         this.channelName = config.channelName || undefined
@@ -53,10 +54,12 @@ const init: NodeInitializer = RED => {
                 if (mode === 'direct') {
                     const pressed = direct(msg.payload)
                     if (pressed === undefined) throw new Error(`Invalid direct button payload: ${JSON.stringify(msg.payload)}`)
+                    sendAcknowledge(acknowledgeMode, 'immediate', msg, send)
                     await run(repo, ids, pressed)
                 } else {
                     if (this.busy) { this.warn('Button is busy; trigger ignored.'); done?.(); return }
                     this.busy = true
+                    sendAcknowledge(acknowledgeMode, 'immediate', msg, send)
                     this.status({ fill: 'yellow', shape: 'dot', text: 'busy' })
                     try {
                         if (execution === 'parallel') {
@@ -69,7 +72,7 @@ const init: NodeInitializer = RED => {
                         }
                     } finally { this.busy = false; this.status({ fill: 'green', shape: 'dot', text: 'connected' }) }
                 }
-                if (this.acknowledge) { msg.acknowledge = true; send(msg) }
+                sendAcknowledge(acknowledgeMode, 'completed', msg, send)
                 done?.()
             } catch (error) { this.busy = false; done ? done(error) : this.error(error, msg) }
         })

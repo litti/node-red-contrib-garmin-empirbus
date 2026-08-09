@@ -1,4 +1,3 @@
-"use strict";
 (() => {
     const controlsSelectors = {
         masterCheckboxSelector: '.empirbus-channel-master-checkbox',
@@ -213,15 +212,18 @@
         });
     };
     const bindAcknowledgeOutput = (node) => {
-        const acknowledgeInput = $('#node-input-acknowledge');
+        const modeInput = $('#node-input-acknowledgeMode');
         const outputsInput = $('#node-input-outputs');
-        if (acknowledgeInput.length === 0 || outputsInput.length === 0)
+        if (modeInput.length === 0 || outputsInput.length === 0)
             return;
+        const initialMode = ['none', 'immediate', 'completed'].includes(String(node.acknowledgeMode))
+            ? String(node.acknowledgeMode)
+            : node.acknowledge ? 'completed' : 'none';
         const syncOutputs = () => {
-            outputsInput.val(acknowledgeInput.is(':checked') ? '1' : '0');
+            outputsInput.val(modeInput.val() === 'none' ? '0' : '1');
         };
-        acknowledgeInput
-            .prop('checked', !!node.acknowledge)
+        modeInput
+            .val(initialMode)
             .off('change.empirbus-output')
             .on('change.empirbus-output', syncOutputs);
         syncOutputs();

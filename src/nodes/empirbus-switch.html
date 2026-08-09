@@ -4,13 +4,13 @@
 <div class="form-row empirbus-row"><label for="node-input-config"><i class="fa fa-cog"></i> EmpirBus Config</label><input id="node-input-config" type="text"></div>
 <div class="form-row empirbus-row"><label for="node-input-channelId">Channel ID</label><input id="node-input-channelId" type="number"></div>
 <div class="form-row empirbus-row"><label for="node-input-channelName">Channel Name</label><input id="node-input-channelName" type="text"></div>
-<div class="form-row empirbus-row"><label for="node-input-acknowledge"><i class="fa fa-check"></i> Acknowledge</label><div class="empirbus-input-wrapper"><input id="node-input-acknowledge" type="checkbox" style="width:auto"><span class="help">Adds <code>acknowledge:true</code> and enables the output.</span></div></div>
+<div class="form-row empirbus-row"><label for="node-input-acknowledgeMode"><i class="fa fa-check"></i> Acknowledge</label><div class="empirbus-input-wrapper"><select id="node-input-acknowledgeMode"><option value="none">None</option><option value="immediate">Immediately</option><option value="completed">After execution</option></select><span class="help">None disables the output. Immediately acknowledges after validation when execution starts. After execution acknowledges only after successful completion.</span></div></div>
 <input type="hidden" id="node-input-outputs">
 <div class="form-row"><label>Channels</label><div id="empirbus-switch-channels"></div><input type="hidden" id="node-input-channelIds"><span class="help">Selected IDs take precedence over message IDs, single ID and channel name.</span></div>
 </script>
 <script src="resources/node-red-contrib-garmin-empirbus/empirbus-editor.js"></script>
 <script type="text/javascript">
-RED.nodes.registerType('empirbus-switch',{category:'garmin-empirbus',color:'#a6bbcf',defaults:{name:{value:''},config:{value:'',type:'empirbus-config',required:true},channelId:{value:''},channelName:{value:''},channelIds:{value:''},acknowledge:{value:false},outputs:{value:0}},inputs:1,icon:'empirbus-switch.svg',label:function(){return this.name||'EmpirBus Switch'},oneditprepare:function(){EmpirbusEditor.bindConfigChange({node:this,containerSelector:'#empirbus-switch-channels'})},oneditsave:function(){EmpirbusEditor.saveSelectedChannelIds('#empirbus-switch-channels')}})
+RED.nodes.registerType('empirbus-switch',{category:'garmin-empirbus',color:'#a6bbcf',defaults:{name:{value:''},config:{value:'',type:'empirbus-config',required:true},channelId:{value:''},channelName:{value:''},channelIds:{value:''},acknowledge:{value:false},acknowledgeMode:{value:''},outputs:{value:0}},inputs:1,icon:'empirbus-switch.svg',label:function(){return this.name||'EmpirBus Switch'},oneditprepare:function(){EmpirbusEditor.bindConfigChange({node:this,containerSelector:'#empirbus-switch-channels'})},oneditsave:function(){EmpirbusEditor.saveSelectedChannelIds('#empirbus-switch-channels')}})
 </script>
 <script type="text/x-red" data-help-name="empirbus-switch">
 <h3>Deutsch</h3>
@@ -30,5 +30,5 @@ RED.nodes.registerType('empirbus-switch',{category:'garmin-empirbus',color:'#a6b
 <p><b>Channels</b></p>
 <p>Multiple selected channels are switched together. A dynamic channel ID can be supplied with <code>msg.topic = "empirbus/&lt;id&gt;"</code>.</p>
 <p><b>Acknowledge</b></p>
-<p>When enabled, a compatible acknowledgement message is emitted after successful processing. Without acknowledgement the node has no output.</p>
+<p>Acknowledge can be disabled, emitted immediately after validation/start, or emitted after successful execution.</p>
 </script>

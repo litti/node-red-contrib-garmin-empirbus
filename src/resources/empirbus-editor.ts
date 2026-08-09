@@ -321,19 +321,23 @@
         })
     }
 
-    const bindAcknowledgeOutput = (node: { acknowledge?: boolean }): void => {
-        const acknowledgeInput = $('#node-input-acknowledge')
+    const bindAcknowledgeOutput = (node: { acknowledge?: boolean; acknowledgeMode?: string }): void => {
+        const modeInput = $('#node-input-acknowledgeMode')
         const outputsInput = $('#node-input-outputs')
 
-        if (acknowledgeInput.length === 0 || outputsInput.length === 0)
+        if (modeInput.length === 0 || outputsInput.length === 0)
             return
 
+        const initialMode = ['none', 'immediate', 'completed'].includes(String(node.acknowledgeMode))
+            ? String(node.acknowledgeMode)
+            : node.acknowledge ? 'completed' : 'none'
+
         const syncOutputs = (): void => {
-            outputsInput.val(acknowledgeInput.is(':checked') ? '1' : '0')
+            outputsInput.val(modeInput.val() === 'none' ? '0' : '1')
         }
 
-        acknowledgeInput
-            .prop('checked', !!node.acknowledge)
+        modeInput
+            .val(initialMode)
             .off('change.empirbus-output')
             .on('change.empirbus-output', syncOutputs)
 

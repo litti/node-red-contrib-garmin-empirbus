@@ -4,6 +4,7 @@ const channelHandling_1 = require("../helpers/channelHandling");
 const inputPayload_1 = require("../helpers/inputPayload");
 const getRepository_1 = require("../helpers/getRepository");
 const resultHandling_1 = require("../helpers/resultHandling");
+const acknowledge_1 = require("../helpers/acknowledge");
 const getMaximumValue = (mode) => {
     if (mode === 'raw')
         return 255;
@@ -58,7 +59,7 @@ const resolveValue = (payload, mode, onLevel) => {
 const init = RED => {
     function Constructor(config) {
         RED.nodes.createNode(this, config);
-        this.acknowledge = !!config.acknowledge;
+        const acknowledgeMode = (0, acknowledge_1.resolveAcknowledgeMode)(config.acknowledgeMode, config.acknowledge);
         this.configNode = RED.nodes.getNode(config.config);
         this.channelId = config.channelId && Number.isFinite(Number(config.channelId)) ? Number(config.channelId) : undefined;
         this.channelName = config.channelName || undefined;
@@ -77,15 +78,13 @@ const init = RED => {
                 if (!ids.length)
                     throw new Error('No matching channel found.');
                 const value = resolveValue(msg.payload, mode, configuredOnLevel);
+                const acknowledgementPayload = { state: { brightness: value.brightness } };
+                (0, acknowledge_1.sendAcknowledge)(acknowledgeMode, 'immediate', msg, send, acknowledgementPayload);
                 const results = ids.map(id => repo.dim(id, value.raw));
                 const error = results.map(resultHandling_1.getResultError).find(Boolean);
                 if (error)
                     throw new Error(error);
-                if (this.acknowledge) {
-                    msg.acknowledge = true;
-                    msg.payload = { state: { brightness: value.brightness } };
-                    send(msg);
-                }
+                (0, acknowledge_1.sendAcknowledge)(acknowledgeMode, 'completed', msg, send, acknowledgementPayload);
                 done?.();
             }
             catch (error) {
@@ -96,4 +95,3 @@ const init = RED => {
     RED.nodes.registerType('empirbus-dim', Constructor);
 };
 module.exports = init;
-//# sourceMappingURL=empirbus-dim.js.map

@@ -1,8 +1,9 @@
 import type { NodeDef, NodeInitializer } from 'node-red'
 import type { EmpirbusConfigNode } from '../types/EmpirbusConfigNode'
 import { bindEmpirbusClientStatus } from '../helpers/bindEmpirbusClientStatus'
+import { resolveAcknowledgeMode, sendAcknowledge } from '../helpers/acknowledge'
 
-interface Def extends NodeDef { name: string; config: string; acknowledge: boolean }
+interface Def extends NodeDef { name: string; config: string; acknowledge?: boolean; acknowledgeMode?: string }
 type Telegram = { messagetype: number; messagecmd: number; size: number; data: number[] }
 const byte = (v: unknown) => Number.isInteger(v) && Number(v) >= 0 && Number(v) <= 255
 const validate = (payload: unknown): Telegram => {
@@ -20,6 +21,7 @@ const validate = (payload: unknown): Telegram => {
 const init: NodeInitializer = RED => {
     function Constructor(this: any, config: Def) {
         RED.nodes.createNode(this, config)
+        const acknowledgeMode = resolveAcknowledgeMode(config.acknowledgeMode, config.acknowledge)
         const configNode = RED.nodes.getNode(config.config) as EmpirbusConfigNode | null
         const unsubscribe = bindEmpirbusClientStatus(this, configNode)
         this.on('close', () => unsubscribe?.())
@@ -29,8 +31,9 @@ const init: NodeInitializer = RED => {
                 const telegram = validate(msg.payload)
                 const repo: any = await configNode.getRepository()
                 if (typeof repo.sendRawCommand !== 'function') throw new Error('Installed garmin-empirbus-ts does not support raw commands.')
+                sendAcknowledge(acknowledgeMode, 'immediate', msg, send)
                 repo.sendRawCommand(telegram)
-                if (config.acknowledge) { msg.acknowledge = true; send(msg) }
+                sendAcknowledge(acknowledgeMode, 'completed', msg, send)
                 done?.()
             } catch (error: any) {
                 this.status({ fill: 'red', shape: 'dot', text: 'invalid command' })

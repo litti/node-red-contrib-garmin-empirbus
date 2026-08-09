@@ -223,3 +223,10 @@ For changes:
 - ON level uses the configured dimmer input domain: raw, percent, or normalized.
 - Empty ON level means the maximum for the selected domain.
 - OFF always maps to zero.
+
+
+## Acknowledge modes
+
+Active command nodes support `None`, `Immediately`, and `After execution`. `Immediately` means the command was validated and execution started; it does not mean that a physical state change was confirmed by EmpirBus. Existing flows with `acknowledge: true` and no `acknowledgeMode` are interpreted as `After execution`. The existing acknowledgement message format remains backward compatible.
+
+For switch semantics, both `pulse` and `momentary` channels require a known `onOffStatus`. The Switch node only sends a command when the requested state differs from the last state reported by EmpirBus. This prevents a repeated `ON` request from toggling an already-on pulse channel off. EmpirBus state remains the source of truth.

@@ -1,5 +1,6 @@
 "use strict";
 const bindEmpirbusClientStatus_1 = require("../helpers/bindEmpirbusClientStatus");
+const acknowledge_1 = require("../helpers/acknowledge");
 const byte = (v) => Number.isInteger(v) && Number(v) >= 0 && Number(v) <= 255;
 const validate = (payload) => {
     if (!payload || typeof payload !== 'object' || Array.isArray(payload))
@@ -23,6 +24,7 @@ const validate = (payload) => {
 const init = RED => {
     function Constructor(config) {
         RED.nodes.createNode(this, config);
+        const acknowledgeMode = (0, acknowledge_1.resolveAcknowledgeMode)(config.acknowledgeMode, config.acknowledge);
         const configNode = RED.nodes.getNode(config.config);
         const unsubscribe = (0, bindEmpirbusClientStatus_1.bindEmpirbusClientStatus)(this, configNode);
         this.on('close', () => unsubscribe?.());
@@ -34,11 +36,9 @@ const init = RED => {
                 const repo = await configNode.getRepository();
                 if (typeof repo.sendRawCommand !== 'function')
                     throw new Error('Installed garmin-empirbus-ts does not support raw commands.');
+                (0, acknowledge_1.sendAcknowledge)(acknowledgeMode, 'immediate', msg, send);
                 repo.sendRawCommand(telegram);
-                if (config.acknowledge) {
-                    msg.acknowledge = true;
-                    send(msg);
-                }
+                (0, acknowledge_1.sendAcknowledge)(acknowledgeMode, 'completed', msg, send);
                 done?.();
             }
             catch (error) {
@@ -51,4 +51,3 @@ const init = RED => {
     RED.nodes.registerType('empirbus-command', Constructor);
 };
 module.exports = init;
-//# sourceMappingURL=empirbus-command.js.map

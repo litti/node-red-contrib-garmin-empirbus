@@ -6,9 +6,10 @@ import { getRepository } from '../helpers/getRepository'
 import { EmpirbusConfigNode } from '../types/EmpirbusConfigNode'
 import { EmpirbusToggleAndSwitchNode } from '../types/EmpirbusToggleAndSwitchNode'
 import { getResultError } from '../helpers/resultHandling'
+import { resolveAcknowledgeMode, sendAcknowledge } from '../helpers/acknowledge'
 
 type Mode = 'raw' | 'percent' | 'normalized'
-interface Def extends NodeDef { acknowledge: boolean; channelId?: string; channelIds?: string; channelName?: string; config: string; name: string; inputMode?: Mode; onLevel?: string }
+interface Def extends NodeDef { acknowledge?: boolean; acknowledgeMode?: string; channelId?: string; channelIds?: string; channelName?: string; config: string; name: string; inputMode?: Mode; onLevel?: string }
 
 const getMaximumValue = (mode: Mode) => {
     if (mode === 'raw')
@@ -84,7 +85,7 @@ const resolveValue = (payload: unknown, mode: Mode, onLevel: number) => {
 const init: NodeInitializer = RED => {
     function Constructor(this: EmpirbusToggleAndSwitchNode, config: Def) {
         RED.nodes.createNode(this, config)
-        this.acknowledge = !!config.acknowledge
+        const acknowledgeMode = resolveAcknowledgeMode(config.acknowledgeMode, config.acknowledge)
         this.configNode = RED.nodes.getNode(config.config) as EmpirbusConfigNode | null
         this.channelId = config.channelId && Number.isFinite(Number(config.channelId)) ? Number(config.channelId) : undefined
         this.channelName = config.channelName || undefined
@@ -107,16 +108,14 @@ const init: NodeInitializer = RED => {
                     throw new Error('No matching channel found.')
 
                 const value = resolveValue(msg.payload, mode, configuredOnLevel)
+                const acknowledgementPayload = { state: { brightness: value.brightness } }
+                sendAcknowledge(acknowledgeMode, 'immediate', msg, send, acknowledgementPayload)
                 const results = ids.map(id => repo.dim(id, value.raw))
                 const error = results.map(getResultError).find(Boolean)
                 if (error)
                     throw new Error(error)
 
-                if (this.acknowledge) {
-                    msg.acknowledge = true
-                    msg.payload = { state: { brightness: value.brightness } }
-                    send(msg)
-                }
+                sendAcknowledge(acknowledgeMode, 'completed', msg, send, acknowledgementPayload)
 
                 done?.()
             }
