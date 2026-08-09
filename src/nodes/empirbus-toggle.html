@@ -10,6 +10,21 @@
 </script>
 <script src="resources/node-red-contrib-garmin-empirbus/empirbus-editor.js"></script>
 <script type="text/javascript">
-RED.nodes.registerType('empirbus-toggle',{category:'garmin-empirbus',color:'#a6bbcf',defaults:{name:{value:''},config:{value:'',type:'empirbus-config',required:true},channelId:{value:''},channelName:{value:''},channelIds:{value:''},acknowledge:{value:false},outputs:{value:0}},inputs:1,icon:'empirbus-toggle.svg',label:function(){return this.name||'EmpirBus Toggle'},onadd:function(){EmpirbusEditor.assignSingleConfig(this)},oneditprepare:function(){EmpirbusEditor.bindConfigChange({node:this,containerSelector:'#empirbus-toggle-channels'})},oneditsave:function(){EmpirbusEditor.saveSelectedChannelIds('#empirbus-toggle-channels')}})
+RED.nodes.registerType('empirbus-toggle',{category:'garmin-empirbus',color:'#a6bbcf',defaults:{name:{value:''},config:{value:'',type:'empirbus-config',required:true},channelId:{value:''},channelName:{value:''},channelIds:{value:''},acknowledge:{value:false},outputs:{value:0}},inputs:1,icon:'empirbus-toggle.svg',label:function(){return this.name||'EmpirBus Toggle'},oneditprepare:function(){EmpirbusEditor.bindConfigChange({node:this,containerSelector:'#empirbus-toggle-channels'})},oneditsave:function(){EmpirbusEditor.saveSelectedChannelIds('#empirbus-toggle-channels')}})
 </script>
-<script type="text/x-red" data-help-name="empirbus-toggle"><h3>Deutsch</h3><p>Schaltet bekannte Zustände um. Ist ein Zustand unbekannt, wird für keinen konfigurierten Kanal gesendet.</p><h3>English</h3><p>Toggles known states. If any configured channel state is unknown, nothing is sent.</p></script>
+<script type="text/x-red" data-help-name="empirbus-toggle">
+<h3>Deutsch</h3>
+<p>Kehrt den zuletzt bekannten Ein-/Aus-Zustand eines oder mehrerer EmpirBus-Kanäle um.</p>
+<p>Der Node benötigt dafür einen bekannten Status aus dem Repository. Ist für mindestens einen ausgewählten Kanal noch kein Zustand bekannt, wird kein Kanal geschaltet und ein Fehler gemeldet.</p>
+<p>Mehrere Kanäle werden unterstützt. Eine dynamische Channel ID kann über <code>msg.topic = "empirbus/&lt;id&gt;"</code> angegeben werden.</p>
+<p>Für einen expliziten Zielzustand sollte <b>EmpirBus Switch</b> verwendet werden.</p>
+<p><b>Acknowledge</b></p>
+<p>Ist Acknowledge aktiviert, wird nach erfolgreichem Umschalten eine kompatible Bestätigungsnachricht ausgegeben. Ohne Acknowledge besitzt der Node keinen Ausgang.</p>
+<h3>English</h3>
+<p>Inverts the last known on/off state of one or more EmpirBus channels.</p>
+<p>The node requires a known repository state. If at least one selected channel has no known state yet, no channel is changed and an error is reported.</p>
+<p>Multiple channels are supported. A dynamic channel ID can be supplied with <code>msg.topic = "empirbus/&lt;id&gt;"</code>.</p>
+<p>Use <b>EmpirBus Switch</b> when an explicit target state is required.</p>
+<p><b>Acknowledge</b></p>
+<p>When enabled, a compatible acknowledgement message is emitted after a successful toggle. Without acknowledgement the node has no output.</p>
+</script>

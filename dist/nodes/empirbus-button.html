@@ -3,13 +3,40 @@
 <div class="form-row empirbus-row"><label for="node-input-name"><i class="fa fa-tag"></i> Name</label><input id="node-input-name" type="text"></div>
 <div class="form-row empirbus-row"><label for="node-input-config"><i class="fa fa-cog"></i> EmpirBus Config</label><input id="node-input-config" type="text"></div>
 <div class="form-row empirbus-row"><label for="node-input-channelId">Channel ID</label><input id="node-input-channelId" type="number"></div>
-<div class="form-row empirbus-row"><label for="node-input-channelName">Channel Name</label><input id="node-input-channelName" type="text"></div><div class="form-row empirbus-row"><label for="node-input-mode">Mode</label><select id="node-input-mode"><option value="short">Short Press</option><option value="long">Long Press</option><option value="direct">Direct</option></select></div><div class="form-row empirbus-row"><label for="node-input-durationMs">Duration (ms)</label><input id="node-input-durationMs" type="number" min="10" max="60000"></div><div class="form-row empirbus-row"><label for="node-input-execution">Execution</label><select id="node-input-execution"><option value="sequential">Sequential</option><option value="parallel">Parallel</option></select></div><div class="form-row empirbus-row"><label for="node-input-channelDelayMs">Channel delay (ms)</label><input id="node-input-channelDelayMs" type="number" min="0" max="1000"></div>
+<div class="form-row empirbus-row"><label for="node-input-channelName">Channel Name</label><input id="node-input-channelName" type="text"></div><div class="form-row empirbus-row"><label for="node-input-mode">Mode</label><select id="node-input-mode"><option value="short">Short Press</option><option value="long">Long Press</option><option value="direct">Direct</option></select></div><div class="form-row empirbus-row" id="empirbus-button-duration-row"><label for="node-input-durationMs">Duration (ms)</label><input id="node-input-durationMs" type="number" min="10" max="60000"></div><div class="form-row empirbus-row"><label for="node-input-execution">Execution</label><select id="node-input-execution"><option value="sequential">Sequential</option><option value="parallel">Parallel</option></select></div><div class="form-row empirbus-row"><label for="node-input-channelDelayMs">Channel delay (ms)</label><input id="node-input-channelDelayMs" type="number" min="0" max="1000"></div>
 <div class="form-row empirbus-row"><label for="node-input-acknowledge"><i class="fa fa-check"></i> Acknowledge</label><div class="empirbus-input-wrapper"><input id="node-input-acknowledge" type="checkbox" style="width:auto"><span class="help">Adds <code>acknowledge:true</code> and enables the output.</span></div></div>
 <input type="hidden" id="node-input-outputs">
 <div class="form-row"><label>Channels</label><div id="empirbus-button-channels"></div><input type="hidden" id="node-input-channelIds"><span class="help">Selected IDs take precedence over message IDs, single ID and channel name.</span></div>
 </script>
 <script src="resources/node-red-contrib-garmin-empirbus/empirbus-editor.js"></script>
 <script type="text/javascript">
-RED.nodes.registerType('empirbus-button',{category:'garmin-empirbus',color:'#a6bbcf',defaults:{name:{value:''},config:{value:'',type:'empirbus-config',required:true},channelId:{value:''},channelName:{value:''},channelIds:{value:''},acknowledge:{value:false},outputs:{value:0},mode:{value:'short'},durationMs:{value:150},execution:{value:'sequential'},channelDelayMs:{value:5}},inputs:1,icon:'empirbus-button.svg',label:function(){return this.name||'EmpirBus Button'},onadd:function(){EmpirbusEditor.assignSingleConfig(this)},oneditprepare:function(){EmpirbusEditor.bindConfigChange({node:this,containerSelector:'#empirbus-button-channels'})},oneditsave:function(){EmpirbusEditor.saveSelectedChannelIds('#empirbus-button-channels')}})
+RED.nodes.registerType('empirbus-button',{category:'garmin-empirbus',color:'#a6bbcf',defaults:{name:{value:''},config:{value:'',type:'empirbus-config',required:true},channelId:{value:''},channelName:{value:''},channelIds:{value:''},acknowledge:{value:false},outputs:{value:0},mode:{value:'short'},durationMs:{value:150},execution:{value:'sequential'},channelDelayMs:{value:5}},inputs:1,icon:'empirbus-button.svg',label:function(){return this.name||'EmpirBus Button'},oneditprepare:function(){EmpirbusEditor.bindConfigChange({node:this,containerSelector:'#empirbus-button-channels'});const updateMode=()=>$('#empirbus-button-duration-row').toggle($('#node-input-mode').val()==='long');$('#node-input-mode').on('change',updateMode);updateMode()},oneditsave:function(){EmpirbusEditor.saveSelectedChannelIds('#empirbus-button-channels')}})
 </script>
-<script type="text/x-red" data-help-name="empirbus-button"><h3>Deutsch</h3><p>Unterstützt Short Press, Long Press und Direct sowie sequenzielle oder parallele Mehrfachkanäle. Neue Trigger werden während eines laufenden Tastendrucks ignoriert.</p><h3>English</h3><p>Supports short press, long press and direct mode with sequential or parallel multi-channel execution. New triggers are ignored while a press sequence is busy.</p></script>
+<script type="text/x-red" data-help-name="empirbus-button">
+<h3>Deutsch</h3>
+<p>Entspricht einem <b>Button / SendMomentary</b> in der Garmin-Original-UI. Der Node bildet einen Tastendruck mit getrenntem Drücken und Loslassen ab.</p>
+<p><b>Short Press</b></p>
+<p>Jede Eingangsnachricht erzeugt einen kurzen Tastendruck: drücken, 150 ms warten, loslassen.</p>
+<p><b>Long Press</b></p>
+<p>Jede Eingangsnachricht erzeugt einen langen Tastendruck. Die Dauer ist zwischen 10 und 60000 ms einstellbar.</p>
+<p><b>Direct</b></p>
+<p>Der Flow steuert Drücken und Loslassen selbst. Bevorzugt werden <code>PRESS</code> und <code>RELEASE</code>, jeweils unabhängig von Groß-/Kleinschreibung. Zusätzlich werden <code>ON</code>/<code>OFF</code>, <code>true</code>/<code>false</code> und <code>1</code>/<code>0</code> unterstützt.</p>
+<p><b>Mehrere Kanäle</b></p>
+<p><code>Sequential</code> verarbeitet jeden Kanal vollständig nacheinander und ist der Standard. <code>Parallel</code> sendet zunächst Press an alle Kanäle, wartet und sendet danach Release an alle Kanäle. Bei Sequential kann zwischen den Kanälen eine Pause von 0 bis 1000 ms eingestellt werden; Standard sind 5 ms.</p>
+<p>Während Short Press oder Long Press läuft, werden weitere Trigger ignoriert.</p>
+<p><b>Acknowledge</b></p>
+<p>Ist Acknowledge aktiviert, wird nach Abschluss der Aktion eine kompatible Bestätigungsnachricht ausgegeben. Ohne Acknowledge besitzt der Node keinen Ausgang.</p>
+<h3>English</h3>
+<p>Equivalent to a <b>Button / SendMomentary</b> in the original Garmin UI. It models a button action with separate press and release operations.</p>
+<p><b>Short Press</b></p>
+<p>Each input message performs a short press: press, wait 150 ms, release.</p>
+<p><b>Long Press</b></p>
+<p>Each input message performs a long press. Duration is configurable from 10 to 60000 ms.</p>
+<p><b>Direct</b></p>
+<p>The flow controls press and release itself. Preferred values are case-insensitive <code>PRESS</code> and <code>RELEASE</code>. <code>ON</code>/<code>OFF</code>, <code>true</code>/<code>false</code> and <code>1</code>/<code>0</code> are also supported.</p>
+<p><b>Multiple channels</b></p>
+<p><code>Sequential</code> completes each channel one after another and is the default. <code>Parallel</code> sends press to all channels first, waits, then releases all channels. Sequential execution supports a configurable 0 to 1000 ms inter-channel delay; the default is 5 ms.</p>
+<p>Additional triggers are ignored while a short or long press is running.</p>
+<p><b>Acknowledge</b></p>
+<p>When enabled, a compatible acknowledgement message is emitted after the action completes. Without acknowledgement the node has no output.</p>
+</script>

@@ -2,90 +2,26 @@
   {
     "id": "a811cddf3dabe080",
     "type": "tab",
-    "label": "Flow 1",
+    "label": "Garmin EmpirBus examples",
     "disabled": false,
-    "info": "",
+    "info": "Example channel IDs are placeholders. Adjust them to your EmpirBus installation.",
     "env": []
   },
   {
-    "id": "b91435e0cde3eb4b",
-    "type": "empirbus-dim",
+    "id": "example-note",
+    "type": "comment",
     "z": "a811cddf3dabe080",
-    "name": "",
-    "config": "",
-    "channelId": "",
-    "channelName": "",
-    "onLevel": "",
-    "channelIds": "",
-    "acknowledge": false,
-    "x": 340,
-    "y": 260,
-    "wires": [
-      [
-        "94d45e762721e26a"
-      ]
-    ]
+    "name": "Adjust WebSocket URL and example channel IDs",
+    "info": "The example uses placeholder channel IDs. Edit the EmpirBus Config URL and channel IDs/topics for your installation.",
+    "x": 270,
+    "y": 60,
+    "wires": []
   },
   {
-    "id": "be82a032dde907a9",
-    "type": "empirbus-state",
-    "z": "a811cddf3dabe080",
-    "name": "",
-    "config": "",
-    "channelId": "",
-    "channelName": "",
-    "channelIds": "",
-    "x": 340,
-    "y": 440,
-    "wires": [
-      [
-        "94d45e762721e26a"
-      ]
-    ]
-  },
-  {
-    "id": "950597d6d8931093",
-    "type": "empirbus-switch",
-    "z": "a811cddf3dabe080",
-    "name": "",
-    "config": "",
-    "channelId": "",
-    "channelName": "",
-    "channelIds": "",
-    "acknowledge": false,
-    "pressMode": "switch",
-    "holdDurationMs": 1000,
-    "x": 350,
-    "y": 320,
-    "wires": [
-      [
-        "94d45e762721e26a"
-      ]
-    ]
-  },
-  {
-    "id": "81244700e9657f18",
-    "type": "empirbus-toggle",
-    "z": "a811cddf3dabe080",
-    "name": "",
-    "config": "",
-    "channelId": "",
-    "channelName": "",
-    "channelIds": "",
-    "acknowledge": false,
-    "x": 350,
-    "y": 380,
-    "wires": [
-      [
-        "94d45e762721e26a"
-      ]
-    ]
-  },
-  {
-    "id": "5165b257cbef0a4e",
+    "id": "inject-dim",
     "type": "inject",
     "z": "a811cddf3dabe080",
-    "name": "",
+    "name": "Dim to 50%",
     "props": [
       {
         "p": "payload"
@@ -99,40 +35,286 @@
     "crontab": "",
     "once": false,
     "onceDelay": 0.1,
-    "topic": "",
-    "payload": "",
-    "payloadType": "date",
-    "x": 120,
-    "y": 260,
+    "topic": "empirbus/1",
+    "payload": "50",
+    "payloadType": "num",
+    "x": 130,
+    "y": 140,
     "wires": [
       [
-        "b91435e0cde3eb4b",
-        "950597d6d8931093"
+        "node-dim"
       ]
     ]
   },
   {
-    "id": "94d45e762721e26a",
+    "id": "node-dim",
+    "type": "empirbus-dim",
+    "z": "a811cddf3dabe080",
+    "name": "Dimmer example",
+    "config": "example-config",
+    "channelId": "",
+    "channelName": "",
+    "channelIds": "",
+    "acknowledge": true,
+    "outputs": 1,
+    "inputMode": "percent",
+    "x": 370,
+    "y": 140,
+    "wires": [
+      [
+        "debug-commands"
+      ]
+    ]
+  },
+  {
+    "id": "inject-switch",
+    "type": "inject",
+    "z": "a811cddf3dabe080",
+    "name": "Switch ON",
+    "props": [
+      {
+        "p": "payload"
+      },
+      {
+        "p": "topic",
+        "vt": "str"
+      }
+    ],
+    "repeat": "",
+    "crontab": "",
+    "once": false,
+    "onceDelay": 0.1,
+    "topic": "empirbus/27",
+    "payload": "ON",
+    "payloadType": "str",
+    "x": 130,
+    "y": 200,
+    "wires": [
+      [
+        "node-switch"
+      ]
+    ]
+  },
+  {
+    "id": "node-switch",
+    "type": "empirbus-switch",
+    "z": "a811cddf3dabe080",
+    "name": "Switch example",
+    "config": "example-config",
+    "channelId": "",
+    "channelName": "",
+    "channelIds": "",
+    "acknowledge": true,
+    "outputs": 1,
+    "x": 370,
+    "y": 200,
+    "wires": [
+      [
+        "debug-commands"
+      ]
+    ]
+  },
+  {
+    "id": "inject-button",
+    "type": "inject",
+    "z": "a811cddf3dabe080",
+    "name": "Short press",
+    "props": [
+      {
+        "p": "payload"
+      },
+      {
+        "p": "topic",
+        "vt": "str"
+      }
+    ],
+    "repeat": "",
+    "crontab": "",
+    "once": false,
+    "onceDelay": 0.1,
+    "topic": "empirbus/7",
+    "payload": "",
+    "payloadType": "date",
+    "x": 130,
+    "y": 260,
+    "wires": [
+      [
+        "node-button"
+      ]
+    ]
+  },
+  {
+    "id": "node-button",
+    "type": "empirbus-button",
+    "z": "a811cddf3dabe080",
+    "name": "Button short press",
+    "config": "example-config",
+    "channelId": "",
+    "channelName": "",
+    "channelIds": "",
+    "acknowledge": true,
+    "outputs": 1,
+    "mode": "short",
+    "durationMs": 150,
+    "execution": "sequential",
+    "channelDelayMs": 5,
+    "x": 380,
+    "y": 260,
+    "wires": [
+      [
+        "debug-commands"
+      ]
+    ]
+  },
+  {
+    "id": "inject-toggle",
+    "type": "inject",
+    "z": "a811cddf3dabe080",
+    "name": "Toggle",
+    "props": [
+      {
+        "p": "payload"
+      },
+      {
+        "p": "topic",
+        "vt": "str"
+      }
+    ],
+    "repeat": "",
+    "crontab": "",
+    "once": false,
+    "onceDelay": 0.1,
+    "topic": "empirbus/27",
+    "payload": "",
+    "payloadType": "date",
+    "x": 110,
+    "y": 320,
+    "wires": [
+      [
+        "node-toggle"
+      ]
+    ]
+  },
+  {
+    "id": "node-toggle",
+    "type": "empirbus-toggle",
+    "z": "a811cddf3dabe080",
+    "name": "Toggle example",
+    "config": "example-config",
+    "channelId": "",
+    "channelName": "",
+    "channelIds": "",
+    "acknowledge": true,
+    "outputs": 1,
+    "x": 370,
+    "y": 320,
+    "wires": [
+      [
+        "debug-commands"
+      ]
+    ]
+  },
+  {
+    "id": "node-state",
+    "type": "empirbus-state",
+    "z": "a811cddf3dabe080",
+    "name": "State example",
+    "config": "example-config",
+    "channelId": "",
+    "channelName": "",
+    "channelIds": "",
+    "x": 370,
+    "y": 400,
+    "wires": [
+      [
+        "debug-state"
+      ]
+    ]
+  },
+  {
+    "id": "debug-commands",
     "type": "debug",
     "z": "a811cddf3dabe080",
-    "name": "debug 1",
+    "name": "Command acknowledgements",
     "active": true,
     "tosidebar": true,
     "console": false,
     "tostatus": false,
-    "complete": "false",
+    "complete": "true",
+    "targetType": "full",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 690,
+    "y": 230,
+    "wires": []
+  },
+  {
+    "id": "debug-state",
+    "type": "debug",
+    "z": "a811cddf3dabe080",
+    "name": "EmpirBus states",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "true",
+    "targetType": "full",
     "statusVal": "",
     "statusType": "auto",
     "x": 660,
-    "y": 340,
+    "y": 400,
     "wires": []
+  },
+  {
+    "id": "example-config",
+    "type": "empirbus-config",
+    "name": "Example EmpirBus",
+    "url": "ws://192.168.1.1:8888/ws"
   },
   {
     "id": "f50daaad907b5eb0",
     "type": "global-config",
     "env": [],
     "modules": {
-      "node-red-contrib-garmin-empirbus": "1.1.28"
+      "node-red-contrib-garmin-empirbus": "1.1.44"
     }
+  },
+  {
+    "id": "node-empirbus-debug",
+    "type": "empirbus-debug",
+    "z": "a811cddf3dabe080",
+    "name": "EmpirBus traffic",
+    "config": "example-config",
+    "direction": "both",
+    "scope": "all",
+    "channelIds": "",
+    "controlCommands": true,
+    "statusMessages": true,
+    "systemTraffic": false,
+    "heartbeat": false,
+    "x": 370,
+    "y": 480,
+    "wires": [
+      [
+        "debug-traffic"
+      ]
+    ]
+  },
+  {
+    "id": "debug-traffic",
+    "type": "debug",
+    "z": "a811cddf3dabe080",
+    "name": "Raw EmpirBus traffic",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "true",
+    "targetType": "full",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 690,
+    "y": 480,
+    "wires": []
   }
 ]

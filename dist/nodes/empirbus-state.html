@@ -76,10 +76,6 @@
             return this.name || 'EmpirBus State'
         },
 
-        onadd() {
-            EmpirbusEditor.assignSingleConfig(this)
-        },
-
         oneditprepare() {
             EmpirbusEditor.bindConfigChange({
                 node: this,
@@ -91,4 +87,23 @@
             EmpirbusEditor.saveSelectedChannelIds('#empirbus-state-channels')
         }
     })
+</script>
+
+<script type="text/x-red" data-help-name="empirbus-state">
+<h3>Deutsch</h3>
+<p>Empfängt Statusänderungen von EmpirBus-Kanälen und gibt sie als normalisierten Node-RED-State aus.</p>
+<p><b>Kanalauswahl</b></p>
+<p>Ausgewählte Kanal-Checkboxen haben Vorrang. Ohne Auswahl kann nach einzelner Channel ID oder Channel Name gefiltert werden. Sind keine Filter gesetzt, werden alle empfangenen Kanäle ausgegeben.</p>
+<p><b>Ausgang</b></p>
+<p><code>msg.topic</code> hat das Format <code>empirbus/&lt;id&gt;</code>. Der normalisierte Zustand steht in <code>msg.payload.state</code>. Je nach Kanal kann dieser z. B. <code>power</code>, <code>brightness</code>, <code>percentage</code>, <code>temperature</code>, <code>thermostatSetPoint</code> oder <code>rangeValue</code> enthalten.</p>
+<p>Der erste empfangene Zustand wird nach jedem Deploy oder Neustart immer ausgegeben. Danach werden identische Zustände unterdrückt.</p>
+<p><code>msg.acknowledge = true</code> bleibt aus Kompatibilitätsgründen Bestandteil der State-Nachrichten.</p>
+<h3>English</h3>
+<p>Receives EmpirBus channel state changes and emits a normalized Node-RED state.</p>
+<p><b>Channel selection</b></p>
+<p>Selected channel checkboxes take precedence. Without a selection, a single Channel ID or Channel Name can be used as a filter. With no filter, all received channels are emitted.</p>
+<p><b>Output</b></p>
+<p><code>msg.topic</code> uses <code>empirbus/&lt;id&gt;</code>. The normalized state is available in <code>msg.payload.state</code>. Depending on the channel it may contain values such as <code>power</code>, <code>brightness</code>, <code>percentage</code>, <code>temperature</code>, <code>thermostatSetPoint</code> or <code>rangeValue</code>.</p>
+<p>The first received state is always emitted after each deploy or restart. Identical states are then suppressed.</p>
+<p><code>msg.acknowledge = true</code> remains part of state messages for compatibility.</p>
 </script>

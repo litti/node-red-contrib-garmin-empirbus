@@ -33,12 +33,13 @@ Do not expose message bytes or `messagecmd` details in normal Node-RED help. Pro
 - Use comments only for protocol quirks, compatibility constraints, or non-obvious workarounds.
 - Use descriptive names and small functions.
 - With five or fewer function parameters, keep parameters on one line in definitions and calls.
+- For a single-statement `if`, omit curly braces and keep the body on the following indented line. Use braces for multi-statement branches.
 - Centralize shared message normalization, channel resolution, status handling, and result handling.
 - Do not duplicate helper logic in individual nodes.
 
 ## Config-node behavior
 
-If exactly one EmpirBus config node exists and a newly edited node has no config selected, select that config automatically.
+If exactly one EmpirBus config node exists, assign it immediately when a new EmpirBus runtime node is added to the workspace. Use the editor open lifecycle only as a fallback for existing/imported nodes that still have no config selected.
 
 Do not:
 
@@ -203,3 +204,6 @@ For changes:
 5. Test dynamic `empirbus/<id>` channel resolution.
 6. Test multiple channel IDs.
 7. Test both configured and dynamic inputs.
+
+- `EmpirBus Debug` is passive and must never send traffic. Keep its output suitable for a standard Node-RED Debug node.
+- In `EmpirBus Button`, show `Duration (ms)` only for Long Press. Short Press is fixed at 150 ms.

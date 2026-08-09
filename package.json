@@ -1,7 +1,7 @@
 {
   "name": "node-red-contrib-garmin-empirbus",
   "license": "MIT",
-  "version": "1.1.51",
+  "version": "1.1.45",
   "description": "Connects to Garmin Empirbus MCU or Serv7 Display to enable status and switching",
   "keywords": [
     "node-red"
@@ -22,20 +22,22 @@
       "empirbus-switch": "dist/nodes/empirbus-switch.js",
       "empirbus-toggle": "dist/nodes/empirbus-toggle.js",
       "empirbus-command": "dist/nodes/empirbus-command.js",
-      "empirbus-button": "dist/nodes/empirbus-button.js"
+      "empirbus-button": "dist/nodes/empirbus-button.js",
+      "empirbus-debug": "dist/nodes/empirbus-debug.js"
     }
   },
   "scripts": {
-    "build": "tsc && yarn copy:examples && yarn copy:html && yarn build:resources",
+    "build": "tsc && yarn copy:examples && yarn copy:html && yarn copy:icons && yarn build:resources",
     "build:resources": "tsc -p tsconfig.resources.json",
     "copy:examples": "copyfiles \"examples/**/*.*\" dist",
     "copy:html": "copyfiles -u 1 \"src/nodes/**/*.html\" dist",
     "release:patch": "node scripts/release.mjs patch",
     "release:minor": "node scripts/release.mjs minor",
-    "release:major": "node scripts/release.mjs major"
+    "release:major": "node scripts/release.mjs major",
+    "copy:icons": "copyfiles -u 2 \"src/nodes/icons/*.svg\" dist/nodes"
   },
   "dependencies": {
-    "garmin-empirbus-ts": "^0.1.28"
+    "garmin-empirbus-ts": "^0.1.29"
   },
   "devDependencies": {
     "@types/node": "20",
@@ -45,6 +47,5 @@
     "dotenv-cli": "^11.0.0",
     "typescript": "^5.9.3",
     "yargs": "17"
-  },
-  "packageManager": "yarn@4.18.0"
+  }
 }

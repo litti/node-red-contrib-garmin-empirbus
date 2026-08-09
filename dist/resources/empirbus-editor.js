@@ -183,14 +183,28 @@
         });
         $('#node-input-channelIds').val(ids.join(','));
     };
+    const editorWindow = window;
     const assignSingleConfig = (node) => {
         if (node.config)
-            return;
-        const editor = window.RED;
-        const configs = editor.nodes.filterNodes({ type: 'empirbus-config' });
+            return false;
+        const configs = editorWindow.RED.nodes.filterNodes({ type: 'empirbus-config' });
         if (configs.length !== 1)
-            return;
+            return false;
         node.config = configs[0].id;
+        return true;
+    };
+    const registerSingleConfigAutoAssignment = () => {
+        if (editorWindow.EmpirbusEditorConfigAutoAssignmentRegistered)
+            return;
+        editorWindow.EmpirbusEditorConfigAutoAssignmentRegistered = true;
+        editorWindow.RED.events.on('nodes:add', node => {
+            if (!node.type?.startsWith('empirbus-') || node.type === 'empirbus-config')
+                return;
+            if (!assignSingleConfig(node))
+                return;
+            editorWindow.RED.nodes.dirty(true);
+            editorWindow.RED.view.redraw();
+        });
     };
     const bindAcknowledgeOutput = (node) => {
         const acknowledgeInput = $('#node-input-acknowledge');
@@ -208,6 +222,8 @@
     };
     const bindConfigChange = ({ node, containerSelector }) => {
         ensureStyles();
+        if (assignSingleConfig(node))
+            $('#node-input-config').val(String(node.config || '')).trigger('change');
         const refresh = () => {
             const configId = String($('#node-input-config').val() || '');
             loadChannels({
@@ -220,6 +236,7 @@
         $('#node-input-config').on('change', refresh);
         refresh();
     };
+    registerSingleConfigAutoAssignment();
     window.EmpirbusEditor = {
         assignSingleConfig,
         bindConfigChange,

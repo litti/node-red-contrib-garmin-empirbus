@@ -7,6 +7,7 @@
 
     type BindOptions = {
         node: {
+            config?: string
             channelIds?: string
             acknowledge?: boolean
             outputs?: number
@@ -256,23 +257,61 @@
     }
 
 
-    const assignSingleConfig = (node: { config?: string }): void => {
-        if (node.config)
-            return
+    type EditorNode = {
+        id?: string
+        type?: string
+        config?: string
+    }
 
-        const editor = (window as unknown as {
-            RED: {
-                nodes: {
-                    filterNodes: (filter: { type: string }) => Array<{ id: string }>
-                }
-            }
-        }).RED
-        const configs = editor.nodes.filterNodes({ type: 'empirbus-config' })
+    type EditorApi = {
+        events: {
+            on: (event: string, handler: (node: EditorNode) => void) => void
+        }
+        nodes: {
+            filterNodes: (filter: { type: string }) => Array<{ id: string }>
+            dirty: (dirty: boolean) => void
+        }
+        view: {
+            redraw: () => void
+        }
+    }
+
+    type EditorWindow = Window & {
+        RED: EditorApi
+        EmpirbusEditorConfigAutoAssignmentRegistered?: boolean
+    }
+
+    const editorWindow = window as unknown as EditorWindow
+
+    const assignSingleConfig = (node: EditorNode): boolean => {
+        if (node.config)
+            return false
+
+        const configs = editorWindow.RED.nodes.filterNodes({ type: 'empirbus-config' })
 
         if (configs.length !== 1)
-            return
+            return false
 
         node.config = configs[0].id
+        return true
+    }
+
+    const registerSingleConfigAutoAssignment = (): void => {
+        if (editorWindow.EmpirbusEditorConfigAutoAssignmentRegistered)
+            return
+
+        editorWindow.EmpirbusEditorConfigAutoAssignmentRegistered = true
+
+        editorWindow.RED.events.on('nodes:add', node => {
+            if (!node.type?.startsWith('empirbus-') || node.type === 'empirbus-config')
+                return
+
+            if (!assignSingleConfig(node))
+                return
+
+            editorWindow.RED.nodes.dirty(true)
+            editorWindow.RED.view.redraw()
+        })
     }
 
     const bindAcknowledgeOutput = (node: { acknowledge?: boolean }): void => {
@@ -297,6 +336,9 @@
     const bindConfigChange = ({ node, containerSelector }: BindOptions): void => {
         ensureStyles()
 
+        if (assignSingleConfig(node))
+            $('#node-input-config').val(String(node.config || '')).trigger('change')
+
         const refresh = (): void => {
             const configId = String($('#node-input-config').val() || '')
 
@@ -311,6 +353,8 @@
         $('#node-input-config').on('change', refresh)
         refresh()
     }
+
+    registerSingleConfigAutoAssignment()
 
     ;(window as unknown as {
         EmpirbusEditor: {

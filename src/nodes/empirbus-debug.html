@@ -1,0 +1,32 @@
+<script type="text/x-red" data-template-name="empirbus-debug">
+<style>.empirbus-row{display:flex;align-items:flex-start;gap:8px}.empirbus-row label{flex:0 0 160px;padding-top:7px}.empirbus-input-wrapper{display:flex;flex-direction:column;flex:1}.help{font-size:.85em;opacity:.8}</style>
+<div class="form-row empirbus-row"><label for="node-input-name"><i class="fa fa-tag"></i> Name</label><input id="node-input-name" type="text"></div>
+<div class="form-row empirbus-row"><label for="node-input-config"><i class="fa fa-cog"></i> EmpirBus Config</label><input id="node-input-config" type="text"></div>
+<div class="form-row empirbus-row"><label for="node-input-direction">Direction</label><select id="node-input-direction"><option value="both">Both</option><option value="rx">Received</option><option value="tx">Sent</option></select></div>
+<div class="form-row empirbus-row"><label for="node-input-scope">Scope</label><select id="node-input-scope"><option value="all">All channels</option><option value="selected">Selected channels</option></select></div>
+<div class="form-row empirbus-row"><label>Traffic</label><div class="empirbus-input-wrapper">
+<label style="flex:none;padding:0"><input id="node-input-controlCommands" type="checkbox" style="width:auto"> Control commands</label>
+<label style="flex:none;padding:0"><input id="node-input-statusMessages" type="checkbox" style="width:auto"> Status messages</label>
+<label style="flex:none;padding:0"><input id="node-input-systemTraffic" type="checkbox" style="width:auto"> System traffic</label>
+<label style="flex:none;padding:0"><input id="node-input-heartbeat" type="checkbox" style="width:auto"> Heartbeat</label>
+</div></div>
+<div class="form-row" id="empirbus-debug-channel-row"><label>Channels</label><div id="empirbus-debug-channels"></div><input type="hidden" id="node-input-channelIds"><span class="help">Used when Scope is Selected channels.</span></div>
+</script>
+<script src="resources/node-red-contrib-garmin-empirbus/empirbus-editor.js"></script>
+<script type="text/javascript">
+RED.nodes.registerType('empirbus-debug',{category:'garmin-empirbus',color:'#a6bbcf',defaults:{name:{value:''},config:{value:'',type:'empirbus-config',required:true},direction:{value:'both'},scope:{value:'all'},channelIds:{value:''},controlCommands:{value:true},statusMessages:{value:true},systemTraffic:{value:false},heartbeat:{value:false}},inputs:0,outputs:1,icon:'empirbus-debug.svg',label:function(){return this.name||'EmpirBus Debug'},oneditprepare:function(){EmpirbusEditor.bindConfigChange({node:this,containerSelector:'#empirbus-debug-channels'});const updateScope=()=>$('#empirbus-debug-channel-row').toggle($('#node-input-scope').val()==='selected');$('#node-input-scope').on('change',updateScope);updateScope()},oneditsave:function(){EmpirbusEditor.saveSelectedChannelIds('#empirbus-debug-channels')}})
+</script>
+<script type="text/x-red" data-help-name="empirbus-debug">
+<h3>Deutsch</h3>
+<p>Beobachtet die rohe EmpirBus-Kommunikation, ohne sie zu verändern. Verbinde den Ausgang mit einem normalen Node-RED-Debug-Node, um Telegramme im Debug-Tab anzuzeigen.</p>
+<p><b>Direction</b> filtert empfangene (<code>rx</code>), gesendete (<code>tx</code>) oder beide Richtungen.</p>
+<p><b>Scope</b> zeigt entweder alle Kanäle oder nur ausgewählte Kanal-IDs. Systemverkehr und Heartbeats besitzen keine Kanal-ID und werden über ihre eigenen Optionen ein- oder ausgeblendet.</p>
+<p><b>Traffic</b> unterscheidet Steuerbefehle, Statusmeldungen, Systemverkehr und Heartbeats. Standardmäßig sind Steuerbefehle und Statusmeldungen aktiv, Systemverkehr und Heartbeats aus.</p>
+<p>Die Ausgabe enthält Richtung, Kanal-ID soweit vorhanden, Kategorie, lesbaren Befehl, Zeitstempel und das unveränderte rohe Telegramm.</p>
+<h3>English</h3>
+<p>Observes raw EmpirBus communication without modifying it. Connect the output to a standard Node-RED Debug node to view telegrams in the Debug sidebar.</p>
+<p><b>Direction</b> filters received (<code>rx</code>), sent (<code>tx</code>) or both directions.</p>
+<p><b>Scope</b> shows all channels or selected channel IDs only. System traffic and heartbeats have no channel ID and are controlled by their own options.</p>
+<p><b>Traffic</b> separates control commands, status messages, system traffic and heartbeats. Control commands and status messages are enabled by default; system traffic and heartbeats are disabled.</p>
+<p>The output contains direction, channel ID when available, category, readable command, timestamp and the unchanged raw telegram.</p>
+</script>

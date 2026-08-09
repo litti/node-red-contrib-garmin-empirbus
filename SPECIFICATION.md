@@ -81,6 +81,7 @@ Current shared areas include:
 - Avoid comments unless they document a protocol/compatibility constraint or unavoidable workaround.
 - Use descriptive names and small focused functions.
 - Keep function parameter lists and calls on one line when there are five or fewer parameters.
+- Omit curly braces for single-statement `if` branches. Keep the single statement on the following indented line. Use braces whenever a branch contains more than one statement.
 - Do not add framework-independent business logic to individual nodes.
 - Preserve existing message contracts unless a breaking change is explicitly approved.
 
@@ -94,14 +95,14 @@ The editor exposes channel discovery through the existing administrative route/A
 
 ### 5.1 Automatic config selection
 
-When editing a node with no selected config:
+When a new EmpirBus runtime node is added to the workspace:
 
-- exactly one EmpirBus config exists → select it automatically,
+- exactly one EmpirBus config exists → assign it immediately,
 - zero configs exist → do not create one automatically,
 - multiple configs exist → do not choose one,
 - an existing selection → never overwrite it.
 
-This behavior should be implemented centrally in the editor helper.
+The automatic assignment is registered centrally through the Node-RED editor `nodes:add` event. Opening the edit dialog is not required. The edit lifecycle may apply the same rule only as a fallback for existing or imported nodes that still have no config selected.
 
 ## 6. Connection and node status
 
@@ -806,3 +807,13 @@ Do not:
 - add raw protocol internals to user-facing Node help,
 - implement FlowFuse dashboard repeat-while-held inside this package,
 - migrate existing dashboard flows as part of unrelated package work.
+
+## EmpirBus Debug
+
+`EmpirBus Debug` is a passive observer. It has no input, always has one output, has no acknowledgement option, and must never modify or trigger EmpirBus traffic.
+
+It consumes `EmpirBusChannelRepository.onCommunication()` and supports direction (`both`, `rx`, `tx`), scope (`all`, `selected`), multi-channel selection, and independent filters for control commands, status messages, system traffic, and heartbeat. Defaults are both directions, all channels, control enabled, status enabled, system disabled, heartbeat disabled.
+
+Its output topic is `empirbus/debug/{direction}/{channelId|system}`. Payload contains direction, optional channelId, category, readable command, timestamp, and the raw message.
+
+For the Button editor, `Duration (ms)` is visible only in `Long Press` mode. `Short Press` always uses the fixed 150 ms duration and must not expose a duration field.

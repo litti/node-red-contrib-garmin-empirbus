@@ -10,6 +10,25 @@
 </script>
 <script src="resources/node-red-contrib-garmin-empirbus/empirbus-editor.js"></script>
 <script type="text/javascript">
-RED.nodes.registerType('empirbus-dim',{category:'garmin-empirbus',color:'#a6bbcf',defaults:{name:{value:''},config:{value:'',type:'empirbus-config',required:true},channelId:{value:''},channelName:{value:''},channelIds:{value:''},acknowledge:{value:false},outputs:{value:0},inputMode:{value:'percent'}},inputs:1,icon:'empirbus-dim.svg',label:function(){return this.name||'EmpirBus Dimmer'},onadd:function(){EmpirbusEditor.assignSingleConfig(this)},oneditprepare:function(){EmpirbusEditor.bindConfigChange({node:this,containerSelector:'#empirbus-dim-channels'})},oneditsave:function(){EmpirbusEditor.saveSelectedChannelIds('#empirbus-dim-channels')}})
+RED.nodes.registerType('empirbus-dim',{category:'garmin-empirbus',color:'#a6bbcf',defaults:{name:{value:''},config:{value:'',type:'empirbus-config',required:true},channelId:{value:''},channelName:{value:''},channelIds:{value:''},acknowledge:{value:false},outputs:{value:0},inputMode:{value:'percent'}},inputs:1,icon:'empirbus-dim.svg',label:function(){return this.name||'EmpirBus Dimmer'},oneditprepare:function(){EmpirbusEditor.bindConfigChange({node:this,containerSelector:'#empirbus-dim-channels'})},oneditsave:function(){EmpirbusEditor.saveSelectedChannelIds('#empirbus-dim-channels')}})
 </script>
-<script type="text/x-red" data-help-name="empirbus-dim"><h3>Deutsch</h3><p>Dimmerwerte werden strikt als Raw, Prozent oder Normalized validiert; ungültige Werte werden nicht begrenzt.</p><h3>English</h3><p>Dimmer values are strictly validated as raw, percent or normalized; invalid values are not clamped.</p></script>
+<script type="text/x-red" data-help-name="empirbus-dim">
+<h3>Deutsch</h3>
+<p>Setzt den Dimmwert eines oder mehrerer EmpirBus-Kanäle.</p>
+<p><b>Input Mode</b></p>
+<p><code>Raw</code>: Ganzzahl 0 bis 255. <code>Percent</code>: Wert 0 bis 100. <code>Normalized</code>: Wert 0.0 bis 1.0. Prozent- und normierte Werte werden intern in den EmpirBus-Rohwert umgerechnet.</p>
+<p>Ungültige Werte werden abgelehnt und nicht still auf den erlaubten Bereich begrenzt.</p>
+<p>Der Wert kann direkt in <code>msg.payload</code> oder in einem vom State-Format unterstützten verschachtelten Wert stehen.</p>
+<p>Mehrere Kanäle werden unterstützt. Eine dynamische Channel ID kann über <code>msg.topic = "empirbus/&lt;id&gt;"</code> angegeben werden.</p>
+<p><b>Acknowledge</b></p>
+<p>Ist Acknowledge aktiviert, wird der gesetzte Helligkeitswert als kompatible Bestätigung ausgegeben. Ohne Acknowledge besitzt der Node keinen Ausgang.</p>
+<h3>English</h3>
+<p>Sets the dimming level of one or more EmpirBus channels.</p>
+<p><b>Input Mode</b></p>
+<p><code>Raw</code>: integer 0 to 255. <code>Percent</code>: value 0 to 100. <code>Normalized</code>: value 0.0 to 1.0. Percent and normalized values are converted to the EmpirBus raw value internally.</p>
+<p>Invalid values are rejected and are not silently clamped.</p>
+<p>The value can be supplied directly in <code>msg.payload</code> or in a nested value supported by the state-compatible input parser.</p>
+<p>Multiple channels are supported. A dynamic channel ID can be supplied with <code>msg.topic = "empirbus/&lt;id&gt;"</code>.</p>
+<p><b>Acknowledge</b></p>
+<p>When enabled, the applied brightness value is emitted as a compatible acknowledgement. Without acknowledgement the node has no output.</p>
+</script>
