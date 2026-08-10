@@ -113,21 +113,19 @@ If any requested channel has unknown state:
 
 ## Dimmer
 
-Support auto, raw, percentage, and normalized values with explicit semantics. Invalid values are rejected; do not silently clamp.
+Plain numeric payloads use the explicitly configured semantic mode:
 
-Auto: plain values `0..100` are percent; integer values `101..255` are raw. This is the recommended mode for mixed Alexa/HomeKit sources.
+- Raw: `0..255` integer.
+- Percent: `0..100`, converted to raw `0..255`.
+- Normalized: `0..1`, converted to raw `0..255`.
 
-Raw: `0..255` integer.
+Do not infer source identity from a plain number. Legacy `inputMode: "auto"` may remain supported for backwards compatibility, but do not expose Auto as the preferred configuration for new flows.
 
-Percent: `0..100`, converted to raw `0..255`.
+HomeKit `{ Brightness: 0..100 }` is always percent regardless of configured numeric payload mode. HomeKit `{ On: true }` uses the configured ON level; `{ On: false }` sends zero.
 
-Normalized: `0..1`, converted to raw `0..255`.
+Explicit values `{ value, unit }` override the configured numeric payload mode. Supported units are `raw`, `percent`, and `normalized`.
 
-HomeKit `{ Brightness: 0..100 }` is always percent regardless of configured input mode. HomeKit `{ On: true }` uses the configured ON level; `{ On: false }` sends zero.
-
-Explicit values `{ value, unit }` override the configured input mode. Supported units are `raw`, `percent`, and `normalized`.
-
-ON level has its own unit and must not depend on the input mode. Preserve legacy behavior when `onLevelMode` is absent by falling back to the configured non-auto input mode, or percent for auto.
+ON level has its own unit and must not depend on the numeric payload mode. If `onLevelMode` is absent, default to Percent.
 
 Preserve acknowledgement compatibility.
 
@@ -228,7 +226,8 @@ For changes:
 ## Dimmer ON level
 
 - Preserve the configurable ON level.
-- ON level uses the configured dimmer input domain: raw, percent, or normalized.
+- ON level has its own explicit domain: raw, percent, or normalized.
+- If no ON-level domain is stored, default to percent.
 - Empty ON level means the maximum for the selected domain.
 - OFF always maps to zero.
 

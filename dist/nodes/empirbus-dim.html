@@ -4,7 +4,7 @@
 <div class="form-row empirbus-row"><label for="node-input-config"><i class="fa fa-cog"></i> EmpirBus Config</label><input id="node-input-config" type="text"></div>
 <div class="form-row empirbus-row"><label for="node-input-channelId">Channel ID</label><input id="node-input-channelId" type="number"></div>
 <div class="form-row empirbus-row"><label for="node-input-channelName">Channel Name</label><input id="node-input-channelName" type="text"></div>
-<div class="form-row empirbus-row"><label for="node-input-inputMode">Input format</label><div class="empirbus-input-wrapper"><select id="node-input-inputMode"><option value="auto">Auto (recommended)</option><option value="raw">Raw 0–255</option><option value="percent">Percent 0–100</option><option value="normalized">Normalized 0–1</option></select><span class="help">Auto treats plain values 0–100 as percent and integer values 101–255 as raw.</span></div></div>
+<div class="form-row empirbus-row"><label for="node-input-inputMode">Numeric payload</label><div class="empirbus-input-wrapper"><select id="node-input-inputMode"><option value="percent">Percent 0–100</option><option value="raw">Raw 0–255</option><option value="normalized">Normalized 0–1</option></select><span class="help">Controls how plain numeric payloads are interpreted. Structured HomeKit payloads are detected independently.</span></div></div>
 <div class="form-row empirbus-row"><label for="node-input-onLevel">ON level</label><div class="empirbus-input-wrapper"><div class="empirbus-inline-inputs"><input id="node-input-onLevel" type="number"><select id="node-input-onLevelMode"><option value="percent">Percent</option><option value="raw">Raw</option><option value="normalized">Normalized</option></select></div><span id="empirbus-dim-on-level-help" class="help"></span></div></div>
 <div class="form-row empirbus-row"><label for="node-input-acknowledgeMode"><i class="fa fa-check"></i> Acknowledge</label><div class="empirbus-input-wrapper"><select id="node-input-acknowledgeMode"><option value="none">None</option><option value="immediate">Immediately</option><option value="completed">After execution</option></select><span class="help">None disables the output. Immediately acknowledges after validation when execution starts. After execution acknowledges only after successful completion.</span></div></div>
 <input type="hidden" id="node-input-outputs">
@@ -12,13 +12,13 @@
 </script>
 <script src="resources/node-red-contrib-garmin-empirbus/empirbus-editor.js"></script>
 <script type="text/javascript">
-RED.nodes.registerType('empirbus-dim',{category:'garmin-empirbus',color:'#a6bbcf',defaults:{name:{value:''},config:{value:'',type:'empirbus-config',required:true},channelId:{value:''},channelName:{value:''},channelIds:{value:''},acknowledge:{value:false},acknowledgeMode:{value:''},outputs:{value:0},inputMode:{value:'percent'},onLevel:{value:''},onLevelMode:{value:''}},inputs:1,icon:'empirbus-dim.svg',label:function(){return this.name||'EmpirBus Dimmer'},oneditprepare:function(){EmpirbusEditor.bindConfigChange({node:this,containerSelector:'#empirbus-dim-channels'});var inputMode=$('#node-input-inputMode');var onLevelMode=$('#node-input-onLevelMode');if(!onLevelMode.val()){var configuredInputMode=inputMode.val();onLevelMode.val(configuredInputMode==='auto'?'percent':configuredInputMode)}var updateOnLevel=function(){var mode=onLevelMode.val();var input=$('#node-input-onLevel');var help=$('#empirbus-dim-on-level-help');if(mode==='raw'){input.attr({min:0,max:255,step:1});help.text('0–255. Empty means 255. Used when the input is ON.')}else if(mode==='normalized'){input.attr({min:0,max:1,step:0.01});help.text('0–1. Empty means 1. Used when the input is ON.')}else{input.attr({min:0,max:100,step:1});help.text('0–100 %. Empty means 100 %. Used when the input is ON.')}};onLevelMode.on('change',updateOnLevel);updateOnLevel()},oneditsave:function(){EmpirbusEditor.saveSelectedChannelIds('#empirbus-dim-channels')}})
+RED.nodes.registerType('empirbus-dim',{category:'garmin-empirbus',color:'#a6bbcf',defaults:{name:{value:''},config:{value:'',type:'empirbus-config',required:true},channelId:{value:''},channelName:{value:''},channelIds:{value:''},acknowledge:{value:false},acknowledgeMode:{value:''},outputs:{value:0},inputMode:{value:'percent'},onLevel:{value:''},onLevelMode:{value:''}},inputs:1,icon:'empirbus-dim.svg',label:function(){return this.name||'EmpirBus Dimmer'},oneditprepare:function(){EmpirbusEditor.bindConfigChange({node:this,containerSelector:'#empirbus-dim-channels'});var inputMode=$('#node-input-inputMode');var onLevelMode=$('#node-input-onLevelMode');if(!onLevelMode.val())onLevelMode.val('percent')var updateOnLevel=function(){var mode=onLevelMode.val();var input=$('#node-input-onLevel');var help=$('#empirbus-dim-on-level-help');if(mode==='raw'){input.attr({min:0,max:255,step:1});help.text('0–255. Empty means 255. Used when the input is ON.')}else if(mode==='normalized'){input.attr({min:0,max:1,step:0.01});help.text('0–1. Empty means 1. Used when the input is ON.')}else{input.attr({min:0,max:100,step:1});help.text('0–100 %. Empty means 100 %. Used when the input is ON.')}};onLevelMode.on('change',updateOnLevel);updateOnLevel()},oneditsave:function(){EmpirbusEditor.saveSelectedChannelIds('#empirbus-dim-channels')}})
 </script>
 <script type="text/x-red" data-help-name="empirbus-dim">
 <h3>Deutsch</h3>
 <p>Setzt den Dimmwert eines oder mehrerer EmpirBus-Kanäle.</p>
 <p><b>Input Mode</b></p>
-<p><code>Auto</code> ist für gemischte Quellen wie Alexa und HomeKit gedacht: nackte Werte von 0 bis 100 werden als Prozent interpretiert, ganzzahlige Werte von 101 bis 255 als Raw. <code>Raw</code> erwartet 0 bis 255, <code>Percent</code> 0 bis 100 und <code>Normalized</code> 0.0 bis 1.0.</p>
+<p><b>Numeric payload</b> bestimmt ausschließlich, wie nackte Zahlen interpretiert werden: <code>Percent</code> erwartet 0 bis 100, <code>Raw</code> 0 bis 255 und <code>Normalized</code> 0.0 bis 1.0. Strukturierte HomeKit-Payloads werden unabhängig davon erkannt.</p>
 <p>Explizite Werte können unabhängig vom Input Mode angegeben werden: <code>{ value: 50, unit: "percent" }</code>, <code>{ value: 128, unit: "raw" }</code> oder <code>{ value: 0.5, unit: "normalized" }</code>.</p>
 <p><b>ON level</b></p>
 <p>Legt den Dimmwert für <code>ON</code> fest. Das Format wird separat über die Einheit neben dem Wert gewählt. Bleibt das Feld leer, wird der Maximalwert der gewählten Einheit verwendet. <code>OFF</code> setzt immer 0.</p>
@@ -27,13 +27,13 @@ RED.nodes.registerType('empirbus-dim',{category:'garmin-empirbus',color:'#a6bbcf
 <p><b>HomeKit</b></p>
 <p><code>{ Brightness: 0..100 }</code> wird immer als Prozentwert interpretiert, unabhängig vom gewählten Input-Format. <code>{ On: true }</code> verwendet den konfigurierten ON-Level, <code>{ On: false }</code> setzt auf 0.</p>
 <p><b>Alexa</b></p>
-<p>Wenn Alexa Helligkeitswerte als nackte Zahl von 0 bis 100 liefert, sollte <code>Auto</code> verwendet werden. Der Wert wird dann als Prozent interpretiert.</p>
+<p>Wenn Alexa Helligkeitswerte als nackte Zahl von 0 bis 100 liefert, wähle <code>Percent</code>. HomeKit <code>{ Brightness: 0..100 }</code> wird immer als Prozent interpretiert.</p>
 <p><b>Acknowledge</b></p>
 <p>Acknowledge kann deaktiviert, sofort nach erfolgreicher Validierung/Start oder nach erfolgreicher Ausführung gesendet werden.</p>
 <h3>English</h3>
 <p>Sets the dimming level of one or more EmpirBus channels.</p>
 <p><b>Input Mode</b></p>
-<p><code>Auto</code> is intended for mixed sources such as Alexa and HomeKit: plain values from 0 to 100 are interpreted as percent, integer values from 101 to 255 as raw. <code>Raw</code> expects 0 to 255, <code>Percent</code> 0 to 100, and <code>Normalized</code> 0.0 to 1.0.</p>
+<p><b>Numeric payload</b> controls only how plain numeric payloads are interpreted: <code>Percent</code> expects 0 to 100, <code>Raw</code> 0 to 255, and <code>Normalized</code> 0.0 to 1.0. Structured HomeKit payloads are detected independently.</p>
 <p>Explicit values can be supplied independently of the input mode: <code>{ value: 50, unit: "percent" }</code>, <code>{ value: 128, unit: "raw" }</code>, or <code>{ value: 0.5, unit: "normalized" }</code>.</p>
 <p><b>ON level</b></p>
 <p>Defines the dimming value sent for <code>ON</code>. Its unit is selected independently next to the value. If left empty, the maximum value of the selected unit is used. <code>OFF</code> always sets 0.</p>
@@ -42,7 +42,7 @@ RED.nodes.registerType('empirbus-dim',{category:'garmin-empirbus',color:'#a6bbcf
 <p><b>HomeKit</b></p>
 <p><code>{ Brightness: 0..100 }</code> is always interpreted as percent, independent of the selected input format. <code>{ On: true }</code> uses the configured ON level and <code>{ On: false }</code> sets 0.</p>
 <p><b>Alexa</b></p>
-<p>When Alexa provides brightness as a plain number from 0 to 100, use <code>Auto</code>. The value is then interpreted as percent.</p>
+<p>When Alexa provides brightness as a plain number from 0 to 100, select <code>Percent</code>. HomeKit <code>{ Brightness: 0..100 }</code> is always interpreted as percent.</p>
 <p><b>Acknowledge</b></p>
 <p>Acknowledge can be disabled, emitted immediately after successful validation/start, or emitted after successful execution.</p>
 </script>

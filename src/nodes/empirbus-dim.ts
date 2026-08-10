@@ -154,12 +154,9 @@ const resolveInputMode = (value: unknown): InputMode => {
     return 'percent'
 }
 
-const resolveOnLevelMode = (value: unknown, inputMode: InputMode): ValueMode => {
+const resolveOnLevelMode = (value: unknown): ValueMode => {
     if (value === 'raw' || value === 'percent' || value === 'normalized')
         return value
-
-    if (inputMode !== 'auto')
-        return inputMode
 
     return 'percent'
 }
@@ -175,7 +172,7 @@ const init: NodeInitializer = RED => {
         this.selectedChannelIds = parseChannelIds(this.channelIds)
 
         const mode = resolveInputMode(config.inputMode)
-        const onLevelMode = resolveOnLevelMode(config.onLevelMode, mode)
+        const onLevelMode = resolveOnLevelMode(config.onLevelMode)
         const configuredOnLevel = config.onLevel === undefined || config.onLevel === '' ? getMaximumValue(onLevelMode) : Number(config.onLevel)
         const unsubscribe = bindEmpirbusClientStatus(this, this.configNode)
 

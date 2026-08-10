@@ -104,11 +104,9 @@ const resolveInputMode = (value) => {
         return value;
     return 'percent';
 };
-const resolveOnLevelMode = (value, inputMode) => {
+const resolveOnLevelMode = (value) => {
     if (value === 'raw' || value === 'percent' || value === 'normalized')
         return value;
-    if (inputMode !== 'auto')
-        return inputMode;
     return 'percent';
 };
 const init = RED => {
@@ -121,7 +119,7 @@ const init = RED => {
         this.channelIds = config.channelIds || '';
         this.selectedChannelIds = (0, channelHandling_1.parseChannelIds)(this.channelIds);
         const mode = resolveInputMode(config.inputMode);
-        const onLevelMode = resolveOnLevelMode(config.onLevelMode, mode);
+        const onLevelMode = resolveOnLevelMode(config.onLevelMode);
         const configuredOnLevel = config.onLevel === undefined || config.onLevel === '' ? getMaximumValue(onLevelMode) : Number(config.onLevel);
         const unsubscribe = (0, bindEmpirbusClientStatus_1.bindEmpirbusClientStatus)(this, this.configNode);
         this.on('close', () => unsubscribe?.());

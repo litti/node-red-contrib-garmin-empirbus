@@ -57,7 +57,7 @@
     "channelIds": "",
     "acknowledge": true,
     "outputs": 1,
-    "inputMode": "auto",
+    "inputMode": "percent",
     "onLevel": "20",
     "x": 370,
     "y": 140,

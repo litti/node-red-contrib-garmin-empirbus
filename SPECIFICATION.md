@@ -484,20 +484,9 @@ Multi-channel toggle must avoid partial execution caused by state validation fai
 
 ## 13. EmpirBus Dimmer
 
-### 13.1 Supported semantic formats
+### 13.1 Plain numeric payloads
 
-The adapter supports four input modes.
-
-#### Auto
-
-Recommended for mixed Alexa and HomeKit sources. Plain numeric values are interpreted as follows:
-
-```text
-0..100      -> percent
-101..255    -> raw, integer only
-```
-
-Values outside these ranges are rejected. A plain fractional value such as `0.5` is therefore `0.5 %` in Auto mode, not normalized. Use an explicit unit object for normalized input.
+The configured numeric payload mode applies only to plain numeric payloads. New nodes expose these modes:
 
 #### Raw
 
@@ -529,9 +518,11 @@ Conversion:
 raw = round(normalized * 255)
 ```
 
+Legacy flows containing `inputMode: "auto"` remain supported for backwards compatibility, but Auto is not exposed for new configuration. New mixed Alexa/HomeKit flows should select the semantic meaning of plain numeric payloads explicitly, typically Percent for Alexa brightness values.
+
 ### 13.2 Structured input precedence
 
-Known structured formats have priority over the configured input mode.
+Known structured formats have priority over the configured numeric payload mode.
 
 HomeKit:
 
@@ -539,7 +530,7 @@ HomeKit:
 { Brightness: 60 }
 ```
 
-is always interpreted as 60 percent.
+is always interpreted as 60 percent, regardless of the selected numeric payload mode.
 
 ```js
 { On: true }
@@ -573,7 +564,7 @@ percent
 normalized
 ```
 
-It must not inherit Auto heuristics. If `onLevelMode` is absent for compatibility with an older flow, use the configured non-auto input mode. If the input mode is Auto, fall back to Percent.
+It must never inherit the numeric payload mode implicitly. If `onLevelMode` is absent, default to Percent for backwards-compatible deterministic behavior.
 
 An empty ON level means the maximum value of its unit:
 
@@ -591,7 +582,7 @@ Do not silently clamp invalid dimmer values. Reject them and surface a Node-RED 
 
 ### 13.5 Multi-source interoperability
 
-A single EmpirBus Dimmer may be connected to both Alexa and HomeKit. In Auto mode:
+A single EmpirBus Dimmer may be connected directly to both Alexa and HomeKit. Example with Numeric payload = Percent:
 
 ```text
 Alexa 80                 -> 80 % -> raw 204
@@ -599,6 +590,8 @@ HomeKit {Brightness: 60} -> 60 % -> raw 153
 HomeKit {On: true}       -> configured ON level
 HomeKit {On: false}      -> raw 0
 ```
+
+Structured HomeKit messages must never be reinterpreted using the plain numeric payload mode.
 
 ### 13.6 Acknowledge
 
