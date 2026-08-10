@@ -73,7 +73,7 @@ Je nach Kanal kann `msg.payload.state` unter anderem enthalten:
 Nach jedem Deploy oder Neustart wird der erste empfangene Zustand jedes relevanten Kanals immer ausgegeben. Anschließend werden identische Zustände unterdrückt.
 
 
-Der State-Node besitzt drei feste Ausgänge: Standard, Alexa Smart Home v3 und HomeKit. Der Standard-Ausgang bleibt vollständig rückwärtskompatibel. Der Alexa-Ausgang enthält nur die für Alexa relevanten State-Properties; bei Dimmern `power` und `brightness`. Der HomeKit-Ausgang liefert `{ On: true|false }` beziehungsweise bei Dimmern `{ On: true|false, Brightness: 0..100 }`.
+Der State-Node besitzt drei feste Ausgänge: Standard, Alexa Smart Home v3 und HomeKit. Der Standard-Ausgang bleibt vollständig rückwärtskompatibel. Der Alexa-Ausgang enthält nur geänderte Alexa-State-Properties als einzelne Nachrichten. Bei Dimmern werden `power` und `brightness` getrennt gemeldet; beim ersten Status nach Start werden beide vorhandenen Properties einmal ausgegeben. Der HomeKit-Ausgang liefert `{ On: true|false }` beziehungsweise bei Dimmern `{ On: true|false, Brightness: 0..100 }`.
 
 ### HomeKit-Kompatibilität
 

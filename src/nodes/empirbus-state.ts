@@ -13,6 +13,17 @@ type State = Record<string, unknown>
 const parseIds = (value?: string) => Array.from(new Set((value || '').split(',').map(v => Number(v.trim())).filter(Number.isFinite)))
 const stable = (value: State) => JSON.stringify(value, Object.keys(value).sort())
 
+const buildAlexaMessages = (state: State, previous: State | undefined, endpointId: string, topic: string) => {
+    const changedEntries = Object.entries(state).filter(([key, value]) => !previous || previous[key] !== value)
+
+    return changedEntries.map(([key, value]) => ({
+        acknowledge: true,
+        endpointId,
+        topic,
+        payload: { state: { [key]: value } }
+    }))
+}
+
 const init: NodeInitializer = RED => {
     function Constructor(this: any, config: Def) {
         RED.nodes.createNode(this, config)
@@ -22,6 +33,7 @@ const init: NodeInitializer = RED => {
         const fallbackId = Number.isFinite(parsedFallback) ? parsedFallback : undefined
         const wantedName = config.channelName?.trim().toLowerCase()
         const lastStates = new Map<number, string>()
+        const lastAlexaStates = new Map<number, State>()
         let unsubscribeUpdate: Unsubscribe | undefined
         let closed = false
 
@@ -65,11 +77,14 @@ const init: NodeInitializer = RED => {
                 const topic = `empirbus/${endpointId}`
                 const standardMessage = { acknowledge: true, endpointId, topic, payload: { state } }
                 const alexaState = toAlexaState(state)
-                const alexaMessage = alexaState ? { acknowledge: true, endpointId, topic, payload: { state: alexaState } } : null
+                const previousAlexaState = lastAlexaStates.get(channel.id)
+                const alexaMessages = alexaState ? buildAlexaMessages(alexaState, previousAlexaState, endpointId, topic) : []
+                if (alexaState)
+                    lastAlexaStates.set(channel.id, alexaState)
                 const homeKitState = toHomeKitState(state)
                 const homeKitMessage = homeKitState ? { endpointId, topic, payload: homeKitState } : null
 
-                this.send([standardMessage, alexaMessage, homeKitMessage])
+                this.send([standardMessage, alexaMessages.length ? alexaMessages : null, homeKitMessage])
             })
         }).catch(error => this.error(error))
 
