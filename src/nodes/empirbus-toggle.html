@@ -6,11 +6,11 @@
 <div class="form-row empirbus-row"><label for="node-input-channelName">Channel Name</label><input id="node-input-channelName" type="text"></div>
 <div class="form-row empirbus-row"><label for="node-input-acknowledgeMode"><i class="fa fa-check"></i> Acknowledge</label><div class="empirbus-input-wrapper"><select id="node-input-acknowledgeMode"><option value="none">None</option><option value="immediate">Immediately</option><option value="completed">After execution</option></select><span class="help">None disables the output. Immediately acknowledges after validation when execution starts. After execution acknowledges only after successful completion.</span></div></div>
 <input type="hidden" id="node-input-outputs">
-<div class="form-row"><label>Channels</label><div id="empirbus-toggle-channels"></div><input type="hidden" id="node-input-channelIds"><span class="help">Selected IDs take precedence over message IDs, single ID and channel name.</span></div>
+<div class="form-row"><label>Channels</label><div id="empirbus-toggle-channels"></div><input type="hidden" id="node-input-channelIds"><input type="hidden" id="node-input-channelLabels"><span class="help">Selected IDs take precedence over message IDs, single ID and channel name.</span></div>
 </script>
 <script src="resources/node-red-contrib-garmin-empirbus/empirbus-editor.js"></script>
 <script type="text/javascript">
-RED.nodes.registerType('empirbus-toggle',{category:'garmin-empirbus',color:'#a6bbcf',defaults:{name:{value:''},config:{value:'',type:'empirbus-config',required:true},channelId:{value:''},channelName:{value:''},channelIds:{value:''},acknowledge:{value:false},acknowledgeMode:{value:''},outputs:{value:0}},inputs:1,icon:'empirbus-toggle.svg',label:function(){return this.name||'EmpirBus Toggle'},oneditprepare:function(){EmpirbusEditor.bindConfigChange({node:this,containerSelector:'#empirbus-toggle-channels'})},oneditsave:function(){EmpirbusEditor.saveSelectedChannelIds('#empirbus-toggle-channels')}})
+RED.nodes.registerType('empirbus-toggle',{category:'garmin-empirbus',color:'#a6bbcf',defaults:{name:{value:''},config:{value:'',type:'empirbus-config',required:true},channelId:{value:''},channelName:{value:''},channelIds:{value:''},channelLabels:{value:''},acknowledge:{value:false},acknowledgeMode:{value:''},outputs:{value:0}},inputs:1,icon:'empirbus-toggle.svg',label:function(){return EmpirbusEditor.channelLabel(this,'EmpirBus Toggle')},oneditprepare:function(){EmpirbusEditor.bindConfigChange({node:this,containerSelector:'#empirbus-toggle-channels'})},oneditsave:function(){EmpirbusEditor.saveSelectedChannelIds('#empirbus-toggle-channels')}})
 </script>
 <script type="text/x-red" data-help-name="empirbus-toggle">
 <h3>Deutsch</h3>

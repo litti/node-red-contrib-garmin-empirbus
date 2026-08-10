@@ -728,6 +728,11 @@ Requirements:
 - compatible with light/dark Node-RED themes,
 - no unnecessary detail.
 
+
+### Automatic node labels
+
+Nodes with channel selection persist the display labels of selected channels in `channelLabels`. The editor label resolves in this order: explicit `name`, persisted selected channel labels, configured `channelName`, selected channel IDs, node fallback label. Multiple channel labels are joined with ` + ` and long labels are shortened for workspace readability. The node type is not prefixed because the icon communicates the node type. Existing flows without `channelLabels` remain valid and receive stored labels after the node is next opened and saved.
+
 ## 18. Editor consistency
 
 Common editor behavior should live in `resources/empirbus-editor` / its TypeScript source.

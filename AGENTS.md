@@ -34,6 +34,7 @@ Do not expose message bytes or `messagecmd` details in normal Node-RED help. Pro
 - Use descriptive names and small functions.
 - With five or fewer function parameters, keep parameters on one line in definitions and calls.
 - For a single-statement `if`, omit curly braces and keep the body on the following indented line. Use braces for multi-statement branches.
+- Keep workspace labels channel-centric: when no explicit node name is set, channel-aware nodes should display persisted selected channel names without a node-type prefix; the icon communicates the node type.
 - Centralize shared message normalization, channel resolution, status handling, and result handling.
 - Do not duplicate helper logic in individual nodes.
 

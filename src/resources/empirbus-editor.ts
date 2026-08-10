@@ -9,10 +9,18 @@
         node: {
             config?: string
             channelIds?: string
+            channelLabels?: string
             acknowledge?: boolean
             outputs?: number
         }
         containerSelector: string
+    }
+
+    type ChannelLabelNode = {
+        name?: string
+        channelName?: string
+        channelIds?: string
+        channelLabels?: string
     }
 
     type LoadOptions = {
@@ -118,17 +126,18 @@
             .map(entry => entry.trim())
             .filter(Boolean)
 
-    const createCheckbox = (id: string, checked: boolean): JQuery =>
+    const createCheckbox = (id: string, label: string, checked: boolean): JQuery =>
         $('<input type="checkbox">')
             .addClass('empirbus-channel-checkbox')
             .attr('data-channel-id', id)
+            .attr('data-channel-label', label)
             .prop('checked', checked)
 
     const createRow = (channel: Channel, selectedIds: string[]): JQuery => {
         const id = String(channel.id)
         const labelText = channel.description || channel.name || `Channel ${id}`
         const row = $('<div/>').addClass('empirbus-channel-row')
-        const checkbox = createCheckbox(id, selectedIds.includes(id))
+        const checkbox = createCheckbox(id, labelText, selectedIds.includes(id))
         const idLabel = $('<span/>').addClass('empirbus-channel-id').text(id)
         const label = $('<span/>').addClass('empirbus-channel-label').text(labelText)
 
@@ -245,15 +254,62 @@
 
     const saveSelectedChannelIds = (containerSelector: string): void => {
         const ids: string[] = []
+        const labels: string[] = []
 
-        $(`${containerSelector} input[type="checkbox"]:checked`).each(function () {
-            const id = $(this).attr('data-channel-id')
-            if (id)
-                ids.push(id)
+        $(`${containerSelector} input.empirbus-channel-checkbox:checked`).each(function () {
+            const checkbox = $(this)
+            const id = checkbox.attr('data-channel-id')
+            const label = checkbox.attr('data-channel-label')
+
+            if (!id)
+                return
+
+            ids.push(id)
+            labels.push(label || id)
         })
 
         $('#node-input-channelIds').val(ids.join(','))
+        $('#node-input-channelLabels').val(JSON.stringify(labels))
+    }
 
+    const parseChannelLabels = (value?: string): string[] => {
+        if (!value)
+            return []
+
+        try {
+            const labels = JSON.parse(value)
+            if (Array.isArray(labels))
+                return labels.map(label => String(label).trim()).filter(Boolean)
+        } catch {}
+
+        return []
+    }
+
+    const shortenLabel = (value: string): string => {
+        const maxLength = 56
+
+        if (value.length <= maxLength)
+            return value
+
+        return `${value.slice(0, maxLength - 1).trimEnd()}…`
+    }
+
+    const channelLabel = (node: ChannelLabelNode, fallback: string): string => {
+        if (node.name?.trim())
+            return node.name.trim()
+
+        const storedLabels = parseChannelLabels(node.channelLabels)
+        if (storedLabels.length > 0)
+            return shortenLabel(storedLabels.join(' + '))
+
+        if (node.channelName?.trim())
+            return node.channelName.trim()
+
+        const ids = toSelectedIds(node.channelIds)
+        if (ids.length > 0)
+            return shortenLabel(ids.join(' + '))
+
+        return fallback
     }
 
 
@@ -373,11 +429,13 @@
             bindConfigChange: typeof bindConfigChange
             bindAcknowledgeOutput: typeof bindAcknowledgeOutput
             saveSelectedChannelIds: typeof saveSelectedChannelIds
+            channelLabel: typeof channelLabel
         }
     }).EmpirbusEditor = {
         assignSingleConfig,
         bindConfigChange,
         bindAcknowledgeOutput,
-        saveSelectedChannelIds
+        saveSelectedChannelIds,
+        channelLabel
     }
 })()

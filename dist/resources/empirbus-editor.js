@@ -1,4 +1,3 @@
-"use strict";
 (() => {
     const controlsSelectors = {
         masterCheckboxSelector: '.empirbus-channel-master-checkbox',
@@ -86,15 +85,16 @@
         .split(',')
         .map(entry => entry.trim())
         .filter(Boolean);
-    const createCheckbox = (id, checked) => $('<input type="checkbox">')
+    const createCheckbox = (id, label, checked) => $('<input type="checkbox">')
         .addClass('empirbus-channel-checkbox')
         .attr('data-channel-id', id)
+        .attr('data-channel-label', label)
         .prop('checked', checked);
     const createRow = (channel, selectedIds) => {
         const id = String(channel.id);
         const labelText = channel.description || channel.name || `Channel ${id}`;
         const row = $('<div/>').addClass('empirbus-channel-row');
-        const checkbox = createCheckbox(id, selectedIds.includes(id));
+        const checkbox = createCheckbox(id, labelText, selectedIds.includes(id));
         const idLabel = $('<span/>').addClass('empirbus-channel-id').text(id);
         const label = $('<span/>').addClass('empirbus-channel-label').text(labelText);
         row.append(checkbox).append(idLabel).append(label);
@@ -176,12 +176,48 @@
     };
     const saveSelectedChannelIds = (containerSelector) => {
         const ids = [];
-        $(`${containerSelector} input[type="checkbox"]:checked`).each(function () {
-            const id = $(this).attr('data-channel-id');
-            if (id)
-                ids.push(id);
+        const labels = [];
+        $(`${containerSelector} input.empirbus-channel-checkbox:checked`).each(function () {
+            const checkbox = $(this);
+            const id = checkbox.attr('data-channel-id');
+            const label = checkbox.attr('data-channel-label');
+            if (!id)
+                return;
+            ids.push(id);
+            labels.push(label || id);
         });
         $('#node-input-channelIds').val(ids.join(','));
+        $('#node-input-channelLabels').val(JSON.stringify(labels));
+    };
+    const parseChannelLabels = (value) => {
+        if (!value)
+            return [];
+        try {
+            const labels = JSON.parse(value);
+            if (Array.isArray(labels))
+                return labels.map(label => String(label).trim()).filter(Boolean);
+        }
+        catch { }
+        return [];
+    };
+    const shortenLabel = (value) => {
+        const maxLength = 56;
+        if (value.length <= maxLength)
+            return value;
+        return `${value.slice(0, maxLength - 1).trimEnd()}…`;
+    };
+    const channelLabel = (node, fallback) => {
+        if (node.name?.trim())
+            return node.name.trim();
+        const storedLabels = parseChannelLabels(node.channelLabels);
+        if (storedLabels.length > 0)
+            return shortenLabel(storedLabels.join(' + '));
+        if (node.channelName?.trim())
+            return node.channelName.trim();
+        const ids = toSelectedIds(node.channelIds);
+        if (ids.length > 0)
+            return shortenLabel(ids.join(' + '));
+        return fallback;
     };
     const editorWindow = window;
     const assignSingleConfig = (node) => {
@@ -249,7 +285,7 @@
         assignSingleConfig,
         bindConfigChange,
         bindAcknowledgeOutput,
-        saveSelectedChannelIds
+        saveSelectedChannelIds,
+        channelLabel
     };
 })();
-//# sourceMappingURL=empirbus-editor.js.map

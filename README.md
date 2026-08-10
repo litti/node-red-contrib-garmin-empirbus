@@ -40,7 +40,12 @@ Stellt die gemeinsame WebSocket-Verbindung zur Garmin EmpirBus MCU bereit. Alle 
 
 **Typischer Einsatz:** genau ein Config-Node pro Garmin-MCU.
 
-### EmpirBus State
+#
+### Automatische Node-Beschriftung
+
+Nodes mit Kanalauswahl verwenden automatisch die ausgewählten Kanalnamen als Beschriftung, solange kein eigener `Name` gesetzt ist. Bei mehreren Kanälen werden die Namen mit ` + ` verbunden und bei sehr langen Beschriftungen gekürzt. Ist noch kein Kanalname gespeichert, dienen konfigurierte Channel-Namen beziehungsweise Channel-IDs als Fallback. Das Node-Icon kennzeichnet weiterhin den Node-Typ.
+
+## EmpirBus State
 
 Empfängt Statusänderungen und gibt einen normalisierten Zustand aus.
 

@@ -17,11 +17,11 @@
 <label class="empirbus-traffic-option"><input id="node-input-systemTraffic" type="checkbox"> <span>System traffic</span></label>
 <label class="empirbus-traffic-option"><input id="node-input-heartbeat" type="checkbox"> <span>Heartbeat</span></label>
 </div></div>
-<div class="form-row" id="empirbus-debug-channel-row"><label>Channels</label><div id="empirbus-debug-channels"></div><input type="hidden" id="node-input-channelIds"><span class="help">Used when Scope is Selected channels.</span></div>
+<div class="form-row" id="empirbus-debug-channel-row"><label>Channels</label><div id="empirbus-debug-channels"></div><input type="hidden" id="node-input-channelIds"><input type="hidden" id="node-input-channelLabels"><span class="help">Used when Scope is Selected channels.</span></div>
 </script>
 <script src="resources/node-red-contrib-garmin-empirbus/empirbus-editor.js"></script>
 <script type="text/javascript">
-RED.nodes.registerType('empirbus-debug',{category:'garmin-empirbus',color:'#a6bbcf',defaults:{name:{value:''},config:{value:'',type:'empirbus-config',required:true},direction:{value:'both'},scope:{value:'all'},channelIds:{value:''},controlCommands:{value:true},statusMessages:{value:true},systemTraffic:{value:false},heartbeat:{value:false}},inputs:0,outputs:1,icon:'empirbus-debug.svg',label:function(){return this.name||'EmpirBus Debug'},oneditprepare:function(){EmpirbusEditor.bindConfigChange({node:this,containerSelector:'#empirbus-debug-channels'});const updateScope=()=>$('#empirbus-debug-channel-row').toggle($('#node-input-scope').val()==='selected');$('#node-input-scope').on('change',updateScope);updateScope()},oneditsave:function(){EmpirbusEditor.saveSelectedChannelIds('#empirbus-debug-channels')}})
+RED.nodes.registerType('empirbus-debug',{category:'garmin-empirbus',color:'#a6bbcf',defaults:{name:{value:''},config:{value:'',type:'empirbus-config',required:true},direction:{value:'both'},scope:{value:'all'},channelIds:{value:''},channelLabels:{value:''},controlCommands:{value:true},statusMessages:{value:true},systemTraffic:{value:false},heartbeat:{value:false}},inputs:0,outputs:1,icon:'empirbus-debug.svg',label:function(){if(this.name)return this.name;if(this.scope!=='selected')return 'EmpirBus Debug';return EmpirbusEditor.channelLabel(this,'EmpirBus Debug')},oneditprepare:function(){EmpirbusEditor.bindConfigChange({node:this,containerSelector:'#empirbus-debug-channels'});const updateScope=()=>$('#empirbus-debug-channel-row').toggle($('#node-input-scope').val()==='selected');$('#node-input-scope').on('change',updateScope);updateScope()},oneditsave:function(){EmpirbusEditor.saveSelectedChannelIds('#empirbus-debug-channels')}})
 </script>
 <script type="text/x-red" data-help-name="empirbus-debug">
 <h3>Deutsch</h3>

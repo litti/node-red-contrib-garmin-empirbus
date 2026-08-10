@@ -50,7 +50,7 @@
     <div class="form-row">
       <label>Kanäle</label>
       <div id="empirbus-state-channels"></div>
-      <input type="hidden" id="node-input-channelIds">
+      <input type="hidden" id="node-input-channelIds"><input type="hidden" id="node-input-channelLabels">
       <span class="help">Auswahl mehrerer Kanäle</span>
     </div>
 
@@ -67,14 +67,15 @@
             config: { value: '', type: 'empirbus-config', required: true },
             channelId: { value: '', required: false },
             channelName: { value: '', required: false },
-            channelIds: { value: '', required: false }
+            channelIds: { value: '', required: false },
+            channelLabels: { value: '', required: false }
         },
         inputs: 0,
         outputs: 3,
         outputLabels: ['Standard', 'Alexa Smart Home v3', 'HomeKit'],
         icon: 'empirbus-state.svg',
         label() {
-            return this.name || 'EmpirBus State'
+            return EmpirbusEditor.channelLabel(this, 'EmpirBus State')
         },
 
         oneditprepare() {
