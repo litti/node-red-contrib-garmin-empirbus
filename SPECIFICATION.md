@@ -586,7 +586,7 @@ A single EmpirBus Dimmer may be connected directly to both Alexa and HomeKit. Ex
 
 ```text
 Alexa 80                 -> 80 % -> raw 204
-HomeKit {Brightness: 60} -> 60 % -> raw 153
+HomeKit {Brightness: 60} -> 60 % -> raw 600
 HomeKit {On: true}       -> configured ON level
 HomeKit {On: false}      -> raw 0
 ```
@@ -880,4 +880,4 @@ Existing payload formats remain backward compatible.
 
 ## State node output contract
 
-`EmpirBus State` has exactly two outputs. Output 1 is the backwards-compatible Standard/Alexa format using `msg.payload.state` and `msg.acknowledge = true`. Output 2 is a HomeKit adapter output using `msg.payload.On` and, for dimmers, `msg.payload.Brightness` in the range 0..100. Dimmer state derivation must include `power`, `brightness` and `percentage` together on Output 1. Unsupported HomeKit mappings emit no message on Output 2. Do not add separate State nodes solely to target Alexa and HomeKit.
+`EmpirBus State` has exactly three outputs. Output 1 is the backwards-compatible Standard format. Output 2 is an Alexa Smart Home v3 adapter using `msg.payload.state` and `msg.acknowledge = true`; dimmers expose only `power` and `brightness` there. Output 3 is a HomeKit adapter using `msg.payload.On` and, for dimmers, `msg.payload.Brightness` in the range 0..100. Unsupported target mappings emit no message on the corresponding adapter output. Do not add separate State nodes solely to target Alexa and HomeKit.

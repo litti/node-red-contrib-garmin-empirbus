@@ -4,6 +4,7 @@ import type { EmpirbusConfigNode } from '../types/EmpirbusConfigNode'
 import { deriveChannelState } from '../helpers/deriveChannelState'
 import { bindEmpirbusClientStatus } from '../helpers/bindEmpirbusClientStatus'
 import { toHomeKitState } from '../helpers/toHomeKitState'
+import { toAlexaState } from '../helpers/toAlexaState'
 
 type Unsubscribe = () => void
 interface Def extends NodeDef { name: string; config: string; channelIds?: string; channelId?: string; channelName?: string }
@@ -63,10 +64,12 @@ const init: NodeInitializer = RED => {
                 const endpointId = String(channel.id)
                 const topic = `empirbus/${endpointId}`
                 const standardMessage = { acknowledge: true, endpointId, topic, payload: { state } }
+                const alexaState = toAlexaState(state)
+                const alexaMessage = alexaState ? { acknowledge: true, endpointId, topic, payload: { state: alexaState } } : null
                 const homeKitState = toHomeKitState(state)
                 const homeKitMessage = homeKitState ? { endpointId, topic, payload: homeKitState } : null
 
-                this.send([standardMessage, homeKitMessage])
+                this.send([standardMessage, alexaMessage, homeKitMessage])
             })
         }).catch(error => this.error(error))
 

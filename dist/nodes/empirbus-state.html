@@ -70,8 +70,8 @@
             channelIds: { value: '', required: false }
         },
         inputs: 0,
-        outputs: 2,
-        outputLabels: ['Standard / Alexa', 'HomeKit'],
+        outputs: 3,
+        outputLabels: ['Standard', 'Alexa Smart Home v3', 'HomeKit'],
         icon: 'empirbus-state.svg',
         label() {
             return this.name || 'EmpirBus State'
@@ -92,23 +92,25 @@
 
 <script type="text/x-red" data-help-name="empirbus-state">
 <h3>Deutsch</h3>
-<p>Empfängt Statusänderungen von EmpirBus-Kanälen und stellt denselben Zustand gleichzeitig in zwei Formaten bereit.</p>
+<p>Empfängt Statusänderungen von EmpirBus-Kanälen und stellt denselben Zustand gleichzeitig in drei Formaten bereit.</p>
 <p><b>Kanalauswahl</b></p>
 <p>Ausgewählte Kanal-Checkboxen haben Vorrang. Ohne Auswahl kann nach einzelner Channel ID oder Channel Name gefiltert werden. Sind keine Filter gesetzt, werden alle empfangenen Kanäle ausgegeben.</p>
-<p><b>Ausgang 1 – Standard / Alexa</b></p>
-<p><code>msg.topic</code> hat das Format <code>empirbus/&lt;id&gt;</code>. Der normalisierte Zustand steht in <code>msg.payload.state</code>. Dieses Format ist direkt für <code>alexa-smart-home-v3-state</code> geeignet. Dimmer enthalten gemeinsam <code>power</code>, <code>brightness</code> und <code>percentage</code>.</p>
-<p><b>Ausgang 2 – HomeKit</b></p>
+<p><b>Ausgang 1 – Standard</b></p>
+<p><code>msg.topic</code> hat das Format <code>empirbus/&lt;id&gt;</code>. Der vollständige normalisierte Zustand steht in <code>msg.payload.state</code>. Dieser Ausgang bleibt rückwärtskompatibel und kann zusätzliche EmpirBus-spezifische Statusfelder wie <code>unavailable</code>, <code>error1</code> und <code>error2</code> enthalten.</p>
+<p><b>Ausgang 2 – Alexa Smart Home v3</b></p>
+<p>Erzeugt einen gezielten State für <code>alexa-smart-home-v3-state</code>. Dimmer enthalten ausschließlich die relevanten Felder <code>power</code> und <code>brightness</code>; interne EmpirBus-Statusfelder werden nicht weitergegeben. <code>msg.acknowledge = true</code> wird gesetzt. Für nicht unterstützte Alexa-Abbildungen wird keine Nachricht erzeugt.</p>
+<p><b>Ausgang 3 – HomeKit</b></p>
 <p>Schaltzustände werden als <code>{ On: true|false }</code> ausgegeben. Dimmer werden als <code>{ On: true|false, Brightness: 0..100 }</code> ausgegeben und können direkt in einen passenden HomeKit-Service eingespeist werden. Für Zustände ohne unterstützte HomeKit-Abbildung wird an diesem Ausgang keine Nachricht erzeugt.</p>
 <p>Der erste empfangene Zustand wird nach jedem Deploy oder Neustart immer ausgegeben. Danach werden identische Zustände unterdrückt.</p>
-<p><code>msg.acknowledge = true</code> bleibt am Standard-/Alexa-Ausgang aus Kompatibilitätsgründen Bestandteil der State-Nachrichten.</p>
 <h3>English</h3>
-<p>Receives EmpirBus channel state changes and emits the same state simultaneously in two formats.</p>
+<p>Receives EmpirBus channel state changes and emits the same state simultaneously in three formats.</p>
 <p><b>Channel selection</b></p>
 <p>Selected channel checkboxes take precedence. Without a selection, a single Channel ID or Channel Name can be used as a filter. With no filter, all received channels are emitted.</p>
-<p><b>Output 1 – Standard / Alexa</b></p>
-<p><code>msg.topic</code> uses <code>empirbus/&lt;id&gt;</code>. The normalized state is available in <code>msg.payload.state</code>. This format can be connected directly to <code>alexa-smart-home-v3-state</code>. Dimmer states contain <code>power</code>, <code>brightness</code> and <code>percentage</code> together.</p>
-<p><b>Output 2 – HomeKit</b></p>
+<p><b>Output 1 – Standard</b></p>
+<p><code>msg.topic</code> uses <code>empirbus/&lt;id&gt;</code>. The complete normalized state is available in <code>msg.payload.state</code>. This output remains backwards compatible and may contain additional EmpirBus-specific fields such as <code>unavailable</code>, <code>error1</code> and <code>error2</code>.</p>
+<p><b>Output 2 – Alexa Smart Home v3</b></p>
+<p>Creates a focused state for <code>alexa-smart-home-v3-state</code>. Dimmer states contain only the relevant <code>power</code> and <code>brightness</code> fields; internal EmpirBus status fields are not forwarded. <code>msg.acknowledge = true</code> is set. Unsupported Alexa mappings emit no message.</p>
+<p><b>Output 3 – HomeKit</b></p>
 <p>Power states are emitted as <code>{ On: true|false }</code>. Dimmer states are emitted as <code>{ On: true|false, Brightness: 0..100 }</code> and can be connected directly to a matching HomeKit service. No message is emitted on this output for states without a supported HomeKit mapping.</p>
 <p>The first received state is always emitted after each deploy or restart. Identical states are then suppressed.</p>
-<p><code>msg.acknowledge = true</code> remains part of messages on the Standard/Alexa output for compatibility.</p>
 </script>

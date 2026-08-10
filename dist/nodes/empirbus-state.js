@@ -2,6 +2,7 @@
 const deriveChannelState_1 = require("../helpers/deriveChannelState");
 const bindEmpirbusClientStatus_1 = require("../helpers/bindEmpirbusClientStatus");
 const toHomeKitState_1 = require("../helpers/toHomeKitState");
+const toAlexaState_1 = require("../helpers/toAlexaState");
 const parseIds = (value) => Array.from(new Set((value || '').split(',').map(v => Number(v.trim())).filter(Number.isFinite)));
 const stable = (value) => JSON.stringify(value, Object.keys(value).sort());
 const init = RED => {
@@ -45,9 +46,11 @@ const init = RED => {
                 const endpointId = String(channel.id);
                 const topic = `empirbus/${endpointId}`;
                 const standardMessage = { acknowledge: true, endpointId, topic, payload: { state } };
+                const alexaState = (0, toAlexaState_1.toAlexaState)(state);
+                const alexaMessage = alexaState ? { acknowledge: true, endpointId, topic, payload: { state: alexaState } } : null;
                 const homeKitState = (0, toHomeKitState_1.toHomeKitState)(state);
                 const homeKitMessage = homeKitState ? { endpointId, topic, payload: homeKitState } : null;
-                this.send([standardMessage, homeKitMessage]);
+                this.send([standardMessage, alexaMessage, homeKitMessage]);
             });
         }).catch(error => this.error(error));
         this.on('close', () => {
