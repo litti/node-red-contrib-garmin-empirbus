@@ -51,3 +51,4 @@ const init = RED => {
     RED.nodes.registerType('empirbus-command', Constructor);
 };
 module.exports = init;
+//# sourceMappingURL=empirbus-command.js.map

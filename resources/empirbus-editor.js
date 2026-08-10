@@ -1,3 +1,4 @@
+"use strict";
 (() => {
     const controlsSelectors = {
         masterCheckboxSelector: '.empirbus-channel-master-checkbox',

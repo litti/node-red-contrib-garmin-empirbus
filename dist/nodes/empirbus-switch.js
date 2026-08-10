@@ -45,3 +45,4 @@ const init = RED => {
     RED.nodes.registerType('empirbus-switch', Constructor);
 };
 module.exports = init;
+//# sourceMappingURL=empirbus-switch.js.map

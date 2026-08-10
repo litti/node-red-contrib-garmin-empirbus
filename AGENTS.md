@@ -115,9 +115,9 @@ If any requested channel has unknown state:
 
 Plain numeric payloads use the explicitly configured semantic mode:
 
-- Raw: `0..255` integer.
-- Percent: `0..100`, converted to raw `0..255`.
-- Normalized: `0..1`, converted to raw `0..255`.
+- Raw: `0..1000` integer.
+- Percent: `0..100`, converted to raw `0..1000`.
+- Normalized: `0..1`, converted to raw `0..1000`.
 
 Do not infer source identity from a plain number. Legacy `inputMode: "auto"` may remain supported for backwards compatibility, but do not expose Auto as the preferred configuration for new flows.
 

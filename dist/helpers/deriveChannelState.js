@@ -55,12 +55,12 @@ const buildTemperatureOrSetPoint = (channel) => {
     return { temperature: value };
 };
 const buildBrightness = (channel) => {
-    const percent = parsePercent(channel.decodedValue);
-    const raw = channel.rawValue ?? undefined;
-    const value = percent ?? (typeof raw === 'number' ? raw : undefined);
-    if (value === undefined)
-        return null;
-    if (value < 0 || value > 100)
+    const decodedPercent = parsePercent(channel.decodedValue);
+    const rawPercent = channel.mfdType === 'dimmer' && typeof channel.rawValue === 'number'
+        ? channel.rawValue / 10
+        : undefined;
+    const value = decodedPercent ?? rawPercent;
+    if (value === undefined || value < 0 || value > 100)
         return null;
     return { brightness: Math.round(value), percentage: value };
 };

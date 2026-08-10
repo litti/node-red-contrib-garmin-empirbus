@@ -491,7 +491,7 @@ The configured numeric payload mode applies only to plain numeric payloads. New 
 #### Raw
 
 ```text
-integer 0..255
+integer 0..1000
 ```
 
 #### Percent
@@ -503,7 +503,7 @@ number 0..100
 Conversion:
 
 ```text
-raw = round(percent / 100 * 255)
+raw = round(percent / 100 * 1000)
 ```
 
 #### Normalized
@@ -515,7 +515,7 @@ number 0..1
 Conversion:
 
 ```text
-raw = round(normalized * 255)
+raw = round(normalized * 1000)
 ```
 
 Legacy flows containing `inputMode: "auto"` remain supported for backwards compatibility, but Auto is not exposed for new configuration. New mixed Alexa/HomeKit flows should select the semantic meaning of plain numeric payloads explicitly, typically Percent for Alexa brightness values.
@@ -569,7 +569,7 @@ It must never inherit the numeric payload mode implicitly. If `onLevelMode` is a
 An empty ON level means the maximum value of its unit:
 
 ```text
-Raw        -> 255
+Raw        -> 1000
 Percent    -> 100
 Normalized -> 1
 ```

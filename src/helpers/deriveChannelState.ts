@@ -84,14 +84,13 @@ const buildTemperatureOrSetPoint = (channel: Channel): AlexaState | null => {
 }
 
 const buildBrightness = (channel: Channel): AlexaState | null => {
-    const percent = parsePercent(channel.decodedValue)
-    const raw = channel.rawValue ?? undefined
-    const value = percent ?? (typeof raw === 'number' ? raw : undefined)
+    const decodedPercent = parsePercent(channel.decodedValue)
+    const rawPercent = channel.mfdType === 'dimmer' && typeof channel.rawValue === 'number'
+        ? channel.rawValue / 10
+        : undefined
+    const value = decodedPercent ?? rawPercent
 
-    if (value === undefined)
-        return null
-
-    if (value < 0 || value > 100)
+    if (value === undefined || value < 0 || value > 100)
         return null
 
     return { brightness: Math.round(value), percentage: value }

@@ -19,7 +19,7 @@ type ExplicitDimValue = {
 
 const getMaximumValue = (mode: ValueMode) => {
     if (mode === 'raw')
-        return 255
+        return 1000
 
     if (mode === 'normalized')
         return 1
@@ -33,23 +33,23 @@ const convert = (value: unknown, mode: ValueMode): { raw: number; brightness: nu
         throw new Error(`Invalid dimmer payload: ${JSON.stringify(value)}`)
 
     if (mode === 'raw') {
-        if (!Number.isInteger(n) || n < 0 || n > 255)
-            throw new Error('Raw dimmer value must be an integer from 0 to 255.')
+        if (!Number.isInteger(n) || n < 0 || n > 1000)
+            throw new Error('Raw dimmer value must be an integer from 0 to 1000.')
 
-        return { raw: n, brightness: n / 255 * 100 }
+        return { raw: n, brightness: n / 1000 * 100 }
     }
 
     if (mode === 'normalized') {
         if (n < 0 || n > 1)
             throw new Error('Normalized dimmer value must be between 0 and 1.')
 
-        return { raw: Math.round(n * 255), brightness: n * 100 }
+        return { raw: Math.round(n * 1000), brightness: n * 100 }
     }
 
     if (n < 0 || n > 100)
         throw new Error('Percent dimmer value must be between 0 and 100.')
 
-    return { raw: Math.round(n / 100 * 255), brightness: n }
+    return { raw: Math.round(n / 100 * 1000), brightness: n }
 }
 
 const convertAuto = (value: unknown) => {
@@ -60,10 +60,10 @@ const convertAuto = (value: unknown) => {
     if (n >= 0 && n <= 100)
         return convert(n, 'percent')
 
-    if (Number.isInteger(n) && n >= 101 && n <= 255)
+    if (Number.isInteger(n) && n >= 101 && n <= 1000)
         return convert(n, 'raw')
 
-    throw new Error('Auto dimmer value must be between 0 and 100 percent or an integer raw value from 101 to 255.')
+    throw new Error('Auto dimmer value must be between 0 and 100 percent or an integer raw value from 101 to 1000.')
 }
 
 const resolveExplicitDimValue = (payload: unknown): { value: unknown; mode: ValueMode } | undefined => {

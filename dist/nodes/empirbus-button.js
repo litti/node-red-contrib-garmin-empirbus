@@ -97,3 +97,4 @@ const init = RED => {
     RED.nodes.registerType('empirbus-button', Constructor);
 };
 module.exports = init;
+//# sourceMappingURL=empirbus-button.js.map

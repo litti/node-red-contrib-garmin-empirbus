@@ -40,3 +40,4 @@ const init = RED => {
     RED.nodes.registerType('empirbus-toggle', Constructor);
 };
 module.exports = init;
+//# sourceMappingURL=empirbus-toggle.js.map

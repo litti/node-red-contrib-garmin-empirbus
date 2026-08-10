@@ -146,7 +146,9 @@ Während Short Press oder Long Press ausgeführt wird, werden weitere Trigger ig
 Setzt einen Dimmwert. **Numeric payload** bestimmt ausschließlich, wie nackte numerische Payloads interpretiert werden:
 
 - **Percent:** `0...100`
-- **Raw:** Ganzzahl `0...255`
+- **Raw:** Ganzzahl `0...1000`
+
+EmpirBus-Dimmer verwenden eine 16-Bit-Rohskala von `0...1000`; `1000` entspricht `100 %`.
 - **Normalized:** `0.0...1.0`
 
 Wenn Alexa Helligkeitswerte als nackte Zahl von `0...100` liefert, wird **Percent** gewählt. Strukturierte HomeKit-Payloads werden unabhängig davon erkannt: `{ Brightness: 60 }` bedeutet immer 60 %. Dadurch können Alexa und HomeKit parallel direkt an denselben Dimmer angeschlossen werden, ohne einen zusätzlichen Function-Node.

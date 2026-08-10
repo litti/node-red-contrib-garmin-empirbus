@@ -202,8 +202,7 @@
             return;
         editorWindow.EmpirbusEditorConfigAutoAssignmentRegistered = true;
         editorWindow.RED.events.on('nodes:add', node => {
-            var _a;
-            if (!((_a = node.type) === null || _a === void 0 ? void 0 : _a.startsWith('empirbus-')) || node.type === 'empirbus-config')
+            if (!node.type?.startsWith('empirbus-') || node.type === 'empirbus-config')
                 return;
             if (!assignSingleConfig(node))
                 return;
@@ -213,15 +212,18 @@
         });
     };
     const bindAcknowledgeOutput = (node) => {
-        const acknowledgeInput = $('#node-input-acknowledge');
+        const modeInput = $('#node-input-acknowledgeMode');
         const outputsInput = $('#node-input-outputs');
-        if (acknowledgeInput.length === 0 || outputsInput.length === 0)
+        if (modeInput.length === 0 || outputsInput.length === 0)
             return;
+        const initialMode = ['none', 'immediate', 'completed'].includes(String(node.acknowledgeMode))
+            ? String(node.acknowledgeMode)
+            : node.acknowledge ? 'completed' : 'none';
         const syncOutputs = () => {
-            outputsInput.val(acknowledgeInput.is(':checked') ? '1' : '0');
+            outputsInput.val(modeInput.val() === 'none' ? '0' : '1');
         };
-        acknowledgeInput
-            .prop('checked', !!node.acknowledge)
+        modeInput
+            .val(initialMode)
             .off('change.empirbus-output')
             .on('change.empirbus-output', syncOutputs);
         syncOutputs();
@@ -250,3 +252,4 @@
         saveSelectedChannelIds
     };
 })();
+//# sourceMappingURL=empirbus-editor.js.map
