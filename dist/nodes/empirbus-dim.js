@@ -30,6 +30,31 @@ const convert = (value, mode) => {
         throw new Error('Percent dimmer value must be between 0 and 100.');
     return { raw: Math.round(n / 100 * 255), brightness: n };
 };
+const convertAuto = (value) => {
+    const n = Number(value);
+    if (!Number.isFinite(n))
+        throw new Error(`Invalid dimmer payload: ${JSON.stringify(value)}`);
+    if (n >= 0 && n <= 100)
+        return convert(n, 'percent');
+    if (Number.isInteger(n) && n >= 101 && n <= 255)
+        return convert(n, 'raw');
+    throw new Error('Auto dimmer value must be between 0 and 100 percent or an integer raw value from 101 to 255.');
+};
+const resolveExplicitDimValue = (payload) => {
+    if (!payload || typeof payload !== 'object')
+        return undefined;
+    const explicit = payload;
+    if (explicit.value === undefined || typeof explicit.unit !== 'string')
+        return undefined;
+    const unit = explicit.unit.trim().toLowerCase();
+    if (unit === 'raw')
+        return { value: explicit.value, mode: 'raw' };
+    if (unit === 'percent' || unit === '%')
+        return { value: explicit.value, mode: 'percent' };
+    if (unit === 'normalized' || unit === 'normalised')
+        return { value: explicit.value, mode: 'normalized' };
+    throw new Error(`Unsupported dimmer unit: ${explicit.unit}`);
+};
 const resolveDimPower = (payload) => {
     if (typeof payload === 'boolean')
         return payload ? 'ON' : 'OFF';
@@ -48,16 +73,43 @@ const resolveDimPower = (payload) => {
         return undefined;
     return (0, inputPayload_1.resolvePower)(payload);
 };
-const resolveValue = (payload, mode, onLevel) => {
+const resolveInputValue = (payload, mode) => {
+    const explicit = resolveExplicitDimValue(payload);
+    if (explicit)
+        return convert(explicit.value, explicit.mode);
+    const homeKitBrightness = (0, inputPayload_1.resolveHomeKitBrightness)(payload);
+    if (homeKitBrightness !== undefined)
+        return convert(homeKitBrightness, 'percent');
+    const dimValue = (0, inputPayload_1.resolveDimPayload)(payload);
+    if (mode === 'auto')
+        return convertAuto(dimValue);
+    return convert(dimValue, mode);
+};
+const resolveValue = (payload, mode, onLevel, onLevelMode) => {
+    const explicit = resolveExplicitDimValue(payload);
+    if (explicit)
+        return convert(explicit.value, explicit.mode);
     const homeKitBrightness = (0, inputPayload_1.resolveHomeKitBrightness)(payload);
     if (homeKitBrightness !== undefined)
         return convert(homeKitBrightness, 'percent');
     const power = resolveDimPower(payload);
     if (power === 'ON')
-        return convert(onLevel, mode);
+        return convert(onLevel, onLevelMode);
     if (power === 'OFF')
-        return convert(0, mode);
-    return convert((0, inputPayload_1.resolveDimPayload)(payload), mode);
+        return convert(0, 'raw');
+    return resolveInputValue(payload, mode);
+};
+const resolveInputMode = (value) => {
+    if (value === 'auto' || value === 'raw' || value === 'normalized')
+        return value;
+    return 'percent';
+};
+const resolveOnLevelMode = (value, inputMode) => {
+    if (value === 'raw' || value === 'percent' || value === 'normalized')
+        return value;
+    if (inputMode !== 'auto')
+        return inputMode;
+    return 'percent';
 };
 const init = RED => {
     function Constructor(config) {
@@ -68,8 +120,9 @@ const init = RED => {
         this.channelName = config.channelName || undefined;
         this.channelIds = config.channelIds || '';
         this.selectedChannelIds = (0, channelHandling_1.parseChannelIds)(this.channelIds);
-        const mode = ['raw', 'normalized'].includes(config.inputMode || '') ? config.inputMode : 'percent';
-        const configuredOnLevel = config.onLevel === undefined || config.onLevel === '' ? getMaximumValue(mode) : Number(config.onLevel);
+        const mode = resolveInputMode(config.inputMode);
+        const onLevelMode = resolveOnLevelMode(config.onLevelMode, mode);
+        const configuredOnLevel = config.onLevel === undefined || config.onLevel === '' ? getMaximumValue(onLevelMode) : Number(config.onLevel);
         const unsubscribe = (0, bindEmpirbusClientStatus_1.bindEmpirbusClientStatus)(this, this.configNode);
         this.on('close', () => unsubscribe?.());
         this.on('input', async (msg, send, done) => {
@@ -80,7 +133,7 @@ const init = RED => {
                 const ids = await (0, channelHandling_1.resolveChannelIds)(this, msg, repo);
                 if (!ids.length)
                     throw new Error('No matching channel found.');
-                const value = resolveValue(msg.payload, mode, configuredOnLevel);
+                const value = resolveValue(msg.payload, mode, configuredOnLevel, onLevelMode);
                 const acknowledgementPayload = { state: { brightness: value.brightness } };
                 (0, acknowledge_1.sendAcknowledge)(acknowledgeMode, 'immediate', msg, send, acknowledgementPayload);
                 const results = ids.map(id => repo.dim(id, value.raw));
@@ -98,3 +151,4 @@ const init = RED => {
     RED.nodes.registerType('empirbus-dim', Constructor);
 };
 module.exports = init;
+//# sourceMappingURL=empirbus-dim.js.map

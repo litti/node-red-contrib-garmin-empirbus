@@ -145,17 +145,22 @@ Während Short Press oder Long Press ausgeführt wird, werden weitere Trigger ig
 
 Setzt einen Dimmwert. Der Eingabemodus wird im Node gewählt:
 
+- **Auto (empfohlen für Alexa + HomeKit):** nackte Werte `0...100` werden als Prozent interpretiert, ganzzahlige Werte `101...255` als Raw.
 - **Raw:** Ganzzahl `0...255`
 - **Percent:** `0...100`
 - **Normalized:** `0.0...1.0`
 
-Beispiel im Percent-Modus:
+Für gemischte Alexa-/HomeKit-Flows sollte `Auto` verwendet werden. Dadurch wird beispielsweise eine Alexa-Payload `80` als 80 % interpretiert. Eine HomeKit-Payload `{ Brightness: 60 }` wird unabhängig vom gewählten Input-Format immer als 60 % interpretiert.
+
+Explizite Werte können den Input-Modus überschreiben:
 
 ```javascript
-msg.payload = 50;
+msg.payload = { value: 50, unit: "percent" };
+msg.payload = { value: 128, unit: "raw" };
+msg.payload = { value: 0.5, unit: "normalized" };
 ```
 
-Für <code>ON</code> kann im Feld <b>ON level</b> ein eigener Einschaltwert hinterlegt werden. Der Wert verwendet dasselbe Format wie der gewählte Eingabemodus. Bleibt das Feld leer, wird der jeweilige Maximalwert verwendet. <code>OFF</code> setzt immer 0.
+Für `ON` kann im Feld **ON level** ein eigener Einschaltwert hinterlegt werden. Die Einheit des ON-Levels (`Percent`, `Raw` oder `Normalized`) wird separat ausgewählt. Bleibt das Feld leer, wird der Maximalwert der gewählten Einheit verwendet. `OFF` setzt immer 0.
 
 Ungültige Werte werden abgelehnt und nicht automatisch begrenzt.
 
@@ -195,7 +200,7 @@ Ein importierbarer Beispiel-Flow liegt unter [`examples/flow.json`](examples/flo
 The control nodes also accept common payloads from `node-red-contrib-homekit-bridged`, so simple HomeKit integrations do not need Function nodes for payload conversion.
 
 - `EmpirBus Switch`: `{ On: true }` / `{ On: false }` are interpreted as ON/OFF.
-- `EmpirBus Dimmer`: `{ Brightness: 0..100 }` is always interpreted as percent, independent of the configured input format. `{ On: true }` uses the configured ON level and `{ On: false }` sets 0.
+- `EmpirBus Dimmer`: `{ Brightness: 0..100 }` is always interpreted as percent, independent of the configured input format. `{ On: true }` uses the configured ON level and `{ On: false }` sets 0. For plain Alexa brightness values from 0 to 100, use Auto input mode.
 - `EmpirBus Button` in `Direct` mode: `{ On: true }` means PRESS and `{ On: false }` means RELEASE.
 
 Existing input formats remain supported. HomeKit thermostat values such as `TargetTemperature` and `TargetHeatingCoolingState` are intentionally not mapped automatically.
@@ -221,7 +226,7 @@ Most nodes can resolve channels from selected channel checkboxes, a dynamic `msg
 - **EmpirBus State** — receives and normalizes channel state changes.
 - **EmpirBus Switch** — sets a requested ON/OFF target and automatically uses pulse or momentary control based on the last received MFD status type.
 - **EmpirBus Button** — equivalent to a Garmin UI **Button / SendMomentary** and supports Short Press, Long Press and Direct control.
-- **EmpirBus Dimmer** — accepts raw, percent or normalized dimming values and supports a configurable ON level.
+- **EmpirBus Dimmer** — accepts Auto, raw, percent or normalized dimming values, supports explicit value units, and provides a separately typed ON level. Auto is recommended when Alexa and HomeKit share the same dimmer.
 - **EmpirBus Toggle** — inverts the last known channel state and requires a known state.
 - **EmpirBus Command** — advanced raw-command escape hatch for special cases and diagnostics.
 - **EmpirBus Debug** — passively observes and filters raw RX/TX EmpirBus traffic.

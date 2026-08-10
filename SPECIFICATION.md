@@ -486,18 +486,23 @@ Multi-channel toggle must avoid partial execution caused by state validation fai
 
 ### 13.1 Supported semantic formats
 
-The adapter supports three value domains.
+The adapter supports four input modes.
+
+#### Auto
+
+Recommended for mixed Alexa and HomeKit sources. Plain numeric values are interpreted as follows:
+
+```text
+0..100      -> percent
+101..255    -> raw, integer only
+```
+
+Values outside these ranges are rejected. A plain fractional value such as `0.5` is therefore `0.5 %` in Auto mode, not normalized. Use an explicit unit object for normalized input.
 
 #### Raw
 
 ```text
 integer 0..255
-```
-
-Example:
-
-```js
-msg.payload = 128;
 ```
 
 #### Percent
@@ -524,58 +529,80 @@ Conversion:
 raw = round(normalized * 255)
 ```
 
-### 13.2 Input-mode representation
+### 13.2 Structured input precedence
 
-The current implementation exposes the semantic input mode through node configuration. The desired external API must remain unambiguous: a plain numeric value must never be guessed simultaneously as raw, percent, and normalized.
+Known structured formats have priority over the configured input mode.
 
-If a future message-level unit form is added, it should use an explicit shape such as:
+HomeKit:
+
+```js
+{ Brightness: 60 }
+```
+
+is always interpreted as 60 percent.
+
+```js
+{ On: true }
+```
+
+uses the configured ON level.
+
+```js
+{ On: false }
+```
+
+sends raw zero.
+
+Explicit unit objects are also supported and override the configured mode:
 
 ```js
 { value: 50, unit: "percent" }
-```
-
-or:
-
-```js
+{ value: 128, unit: "raw" }
 { value: 0.5, unit: "normalized" }
 ```
 
-without breaking the configured-mode behavior.
+Unit matching is case-insensitive. `normalised` is accepted as an alias for `normalized`, and `%` as an alias for `percent`.
 
-### 13.3 Validation
+### 13.3 ON level
 
-Invalid values are rejected.
-
-Do not silently clamp:
-
-- raw outside `0..255`,
-- percent outside `0..100`,
-- normalized outside `0..1`.
-
-
-### 13.4 ON level
-
-The node supports a configurable `ON level`.
-
-- it uses the same unit/domain as the configured input mode,
-- empty means the maximum value of that input mode,
-- an `ON` input sends the configured ON level,
-- an `OFF` input always sends zero,
-- direct numeric dimmer values continue to use the configured input mode.
-
-Examples:
+The ON level has an independent value mode:
 
 ```text
-input mode: percent, ON level: 20
-input mode: raw, ON level: 144
-input mode: normalized, ON level: 0.2
+raw
+percent
+normalized
 ```
 
-The configured ON level is validated with the same rules as a normal dimmer value.
+It must not inherit Auto heuristics. If `onLevelMode` is absent for compatibility with an older flow, use the configured non-auto input mode. If the input mode is Auto, fall back to Percent.
 
-### 13.5 Acknowledge
+An empty ON level means the maximum value of its unit:
 
-When enabled, preserve the established brightness acknowledgement shape.
+```text
+Raw        -> 255
+Percent    -> 100
+Normalized -> 1
+```
+
+`OFF` always sends raw zero.
+
+### 13.4 Validation
+
+Do not silently clamp invalid dimmer values. Reject them and surface a Node-RED error.
+
+### 13.5 Multi-source interoperability
+
+A single EmpirBus Dimmer may be connected to both Alexa and HomeKit. In Auto mode:
+
+```text
+Alexa 80                 -> 80 % -> raw 204
+HomeKit {Brightness: 60} -> 60 % -> raw 153
+HomeKit {On: true}       -> configured ON level
+HomeKit {On: false}      -> raw 0
+```
+
+### 13.6 Acknowledge
+
+Preserve the existing acknowledgement message format and timing modes. The acknowledgement brightness value is semantic percent, not raw.
 
 ## 14. EmpirBus Command
 

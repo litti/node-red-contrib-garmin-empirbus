@@ -1,43 +1,48 @@
 <script type="text/x-red" data-template-name="empirbus-dim">
-<style>.empirbus-row{display:flex;align-items:flex-start;gap:8px}.empirbus-row label{flex:0 0 160px;padding-top:7px}.empirbus-input-wrapper{display:flex;flex-direction:column;flex:1}.help{font-size:.85em;opacity:.8}</style>
+<style>.empirbus-row{display:flex;align-items:flex-start;gap:8px}.empirbus-row label{flex:0 0 160px;padding-top:7px}.empirbus-input-wrapper{display:flex;flex-direction:column;flex:1}.empirbus-inline-inputs{display:flex;gap:8px}.empirbus-inline-inputs input{flex:1}.empirbus-inline-inputs select{flex:0 0 150px}.help{font-size:.85em;opacity:.8}</style>
 <div class="form-row empirbus-row"><label for="node-input-name"><i class="fa fa-tag"></i> Name</label><input id="node-input-name" type="text"></div>
 <div class="form-row empirbus-row"><label for="node-input-config"><i class="fa fa-cog"></i> EmpirBus Config</label><input id="node-input-config" type="text"></div>
 <div class="form-row empirbus-row"><label for="node-input-channelId">Channel ID</label><input id="node-input-channelId" type="number"></div>
-<div class="form-row empirbus-row"><label for="node-input-channelName">Channel Name</label><input id="node-input-channelName" type="text"></div><div class="form-row empirbus-row"><label for="node-input-inputMode">Input format</label><select id="node-input-inputMode"><option value="raw">Raw 0–255</option><option value="percent">Percent 0–100</option><option value="normalized">Normalized 0–1</option></select></div>
-<div class="form-row empirbus-row"><label for="node-input-onLevel">ON level</label><div class="empirbus-input-wrapper"><input id="node-input-onLevel" type="number"><span id="empirbus-dim-on-level-help" class="help"></span></div></div>
+<div class="form-row empirbus-row"><label for="node-input-channelName">Channel Name</label><input id="node-input-channelName" type="text"></div>
+<div class="form-row empirbus-row"><label for="node-input-inputMode">Input format</label><div class="empirbus-input-wrapper"><select id="node-input-inputMode"><option value="auto">Auto (recommended)</option><option value="raw">Raw 0–255</option><option value="percent">Percent 0–100</option><option value="normalized">Normalized 0–1</option></select><span class="help">Auto treats plain values 0–100 as percent and integer values 101–255 as raw.</span></div></div>
+<div class="form-row empirbus-row"><label for="node-input-onLevel">ON level</label><div class="empirbus-input-wrapper"><div class="empirbus-inline-inputs"><input id="node-input-onLevel" type="number"><select id="node-input-onLevelMode"><option value="percent">Percent</option><option value="raw">Raw</option><option value="normalized">Normalized</option></select></div><span id="empirbus-dim-on-level-help" class="help"></span></div></div>
 <div class="form-row empirbus-row"><label for="node-input-acknowledgeMode"><i class="fa fa-check"></i> Acknowledge</label><div class="empirbus-input-wrapper"><select id="node-input-acknowledgeMode"><option value="none">None</option><option value="immediate">Immediately</option><option value="completed">After execution</option></select><span class="help">None disables the output. Immediately acknowledges after validation when execution starts. After execution acknowledges only after successful completion.</span></div></div>
 <input type="hidden" id="node-input-outputs">
 <div class="form-row"><label>Channels</label><div id="empirbus-dim-channels"></div><input type="hidden" id="node-input-channelIds"><span class="help">Selected IDs take precedence over message IDs, single ID and channel name.</span></div>
 </script>
 <script src="resources/node-red-contrib-garmin-empirbus/empirbus-editor.js"></script>
 <script type="text/javascript">
-RED.nodes.registerType('empirbus-dim',{category:'garmin-empirbus',color:'#a6bbcf',defaults:{name:{value:''},config:{value:'',type:'empirbus-config',required:true},channelId:{value:''},channelName:{value:''},channelIds:{value:''},acknowledge:{value:false},acknowledgeMode:{value:''},outputs:{value:0},inputMode:{value:'percent'},onLevel:{value:''}},inputs:1,icon:'empirbus-dim.svg',label:function(){return this.name||'EmpirBus Dimmer'},oneditprepare:function(){EmpirbusEditor.bindConfigChange({node:this,containerSelector:'#empirbus-dim-channels'});var updateOnLevel=function(){var mode=$('#node-input-inputMode').val();var input=$('#node-input-onLevel');var help=$('#empirbus-dim-on-level-help');if(mode==='raw'){input.attr({min:0,max:255,step:1});help.text('0–255. Empty means 255. Used when the input is ON.')}else if(mode==='normalized'){input.attr({min:0,max:1,step:0.01});help.text('0–1. Empty means 1. Used when the input is ON.')}else{input.attr({min:0,max:100,step:1});help.text('0–100 %. Empty means 100 %. Used when the input is ON.')}};$('#node-input-inputMode').on('change',updateOnLevel);updateOnLevel()},oneditsave:function(){EmpirbusEditor.saveSelectedChannelIds('#empirbus-dim-channels')}})
+RED.nodes.registerType('empirbus-dim',{category:'garmin-empirbus',color:'#a6bbcf',defaults:{name:{value:''},config:{value:'',type:'empirbus-config',required:true},channelId:{value:''},channelName:{value:''},channelIds:{value:''},acknowledge:{value:false},acknowledgeMode:{value:''},outputs:{value:0},inputMode:{value:'percent'},onLevel:{value:''},onLevelMode:{value:''}},inputs:1,icon:'empirbus-dim.svg',label:function(){return this.name||'EmpirBus Dimmer'},oneditprepare:function(){EmpirbusEditor.bindConfigChange({node:this,containerSelector:'#empirbus-dim-channels'});var inputMode=$('#node-input-inputMode');var onLevelMode=$('#node-input-onLevelMode');if(!onLevelMode.val()){var configuredInputMode=inputMode.val();onLevelMode.val(configuredInputMode==='auto'?'percent':configuredInputMode)}var updateOnLevel=function(){var mode=onLevelMode.val();var input=$('#node-input-onLevel');var help=$('#empirbus-dim-on-level-help');if(mode==='raw'){input.attr({min:0,max:255,step:1});help.text('0–255. Empty means 255. Used when the input is ON.')}else if(mode==='normalized'){input.attr({min:0,max:1,step:0.01});help.text('0–1. Empty means 1. Used when the input is ON.')}else{input.attr({min:0,max:100,step:1});help.text('0–100 %. Empty means 100 %. Used when the input is ON.')}};onLevelMode.on('change',updateOnLevel);updateOnLevel()},oneditsave:function(){EmpirbusEditor.saveSelectedChannelIds('#empirbus-dim-channels')}})
 </script>
 <script type="text/x-red" data-help-name="empirbus-dim">
 <h3>Deutsch</h3>
 <p>Setzt den Dimmwert eines oder mehrerer EmpirBus-Kanäle.</p>
 <p><b>Input Mode</b></p>
-<p><code>Raw</code>: Ganzzahl 0 bis 255. <code>Percent</code>: Wert 0 bis 100. <code>Normalized</code>: Wert 0.0 bis 1.0. Prozent- und normierte Werte werden intern in den EmpirBus-Rohwert umgerechnet.</p>
+<p><code>Auto</code> ist für gemischte Quellen wie Alexa und HomeKit gedacht: nackte Werte von 0 bis 100 werden als Prozent interpretiert, ganzzahlige Werte von 101 bis 255 als Raw. <code>Raw</code> erwartet 0 bis 255, <code>Percent</code> 0 bis 100 und <code>Normalized</code> 0.0 bis 1.0.</p>
+<p>Explizite Werte können unabhängig vom Input Mode angegeben werden: <code>{ value: 50, unit: "percent" }</code>, <code>{ value: 128, unit: "raw" }</code> oder <code>{ value: 0.5, unit: "normalized" }</code>.</p>
 <p><b>ON level</b></p>
-<p>Legt fest, welcher Dimmwert bei <code>ON</code> gesendet wird. Der Wert verwendet dasselbe Format wie <b>Input format</b>. Bleibt das Feld leer, wird der Maximalwert verwendet. <code>OFF</code> setzt immer 0.</p>
+<p>Legt den Dimmwert für <code>ON</code> fest. Das Format wird separat über die Einheit neben dem Wert gewählt. Bleibt das Feld leer, wird der Maximalwert der gewählten Einheit verwendet. <code>OFF</code> setzt immer 0.</p>
 <p>Ungültige Werte werden abgelehnt und nicht still auf den erlaubten Bereich begrenzt.</p>
-<p>Der Wert kann direkt in <code>msg.payload</code> oder in einem vom State-Format unterstützten verschachtelten Wert stehen.</p>
 <p>Mehrere Kanäle werden unterstützt. Eine dynamische Channel ID kann über <code>msg.topic = "empirbus/&lt;id&gt;"</code> angegeben werden.</p>
 <p><b>HomeKit</b></p>
 <p><code>{ Brightness: 0..100 }</code> wird immer als Prozentwert interpretiert, unabhängig vom gewählten Input-Format. <code>{ On: true }</code> verwendet den konfigurierten ON-Level, <code>{ On: false }</code> setzt auf 0.</p>
+<p><b>Alexa</b></p>
+<p>Wenn Alexa Helligkeitswerte als nackte Zahl von 0 bis 100 liefert, sollte <code>Auto</code> verwendet werden. Der Wert wird dann als Prozent interpretiert.</p>
 <p><b>Acknowledge</b></p>
-<p>Ist Acknowledge aktiviert, wird der gesetzte Helligkeitswert als kompatible Bestätigung ausgegeben. Ohne Acknowledge besitzt der Node keinen Ausgang.</p>
+<p>Acknowledge kann deaktiviert, sofort nach erfolgreicher Validierung/Start oder nach erfolgreicher Ausführung gesendet werden.</p>
 <h3>English</h3>
 <p>Sets the dimming level of one or more EmpirBus channels.</p>
 <p><b>Input Mode</b></p>
-<p><code>Raw</code>: integer 0 to 255. <code>Percent</code>: value 0 to 100. <code>Normalized</code>: value 0.0 to 1.0. Percent and normalized values are converted to the EmpirBus raw value internally.</p>
+<p><code>Auto</code> is intended for mixed sources such as Alexa and HomeKit: plain values from 0 to 100 are interpreted as percent, integer values from 101 to 255 as raw. <code>Raw</code> expects 0 to 255, <code>Percent</code> 0 to 100, and <code>Normalized</code> 0.0 to 1.0.</p>
+<p>Explicit values can be supplied independently of the input mode: <code>{ value: 50, unit: "percent" }</code>, <code>{ value: 128, unit: "raw" }</code>, or <code>{ value: 0.5, unit: "normalized" }</code>.</p>
 <p><b>ON level</b></p>
-<p>Defines the dimming value sent for <code>ON</code>. The value uses the same format as <b>Input format</b>. If left empty, the maximum value is used. <code>OFF</code> always sets 0.</p>
+<p>Defines the dimming value sent for <code>ON</code>. Its unit is selected independently next to the value. If left empty, the maximum value of the selected unit is used. <code>OFF</code> always sets 0.</p>
 <p>Invalid values are rejected and are not silently clamped.</p>
-<p>The value can be supplied directly in <code>msg.payload</code> or in a nested value supported by the state-compatible input parser.</p>
 <p>Multiple channels are supported. A dynamic channel ID can be supplied with <code>msg.topic = "empirbus/&lt;id&gt;"</code>.</p>
 <p><b>HomeKit</b></p>
 <p><code>{ Brightness: 0..100 }</code> is always interpreted as percent, independent of the selected input format. <code>{ On: true }</code> uses the configured ON level and <code>{ On: false }</code> sets 0.</p>
+<p><b>Alexa</b></p>
+<p>When Alexa provides brightness as a plain number from 0 to 100, use <code>Auto</code>. The value is then interpreted as percent.</p>
 <p><b>Acknowledge</b></p>
-<p>Acknowledge can be disabled, emitted immediately after validation/start, or emitted after successful execution.</p>
+<p>Acknowledge can be disabled, emitted immediately after successful validation/start, or emitted after successful execution.</p>
 </script>

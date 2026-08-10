@@ -113,13 +113,21 @@ If any requested channel has unknown state:
 
 ## Dimmer
 
-Support raw, percentage, and normalized values with explicit semantics. Invalid values are rejected; do not silently clamp.
+Support auto, raw, percentage, and normalized values with explicit semantics. Invalid values are rejected; do not silently clamp.
+
+Auto: plain values `0..100` are percent; integer values `101..255` are raw. This is the recommended mode for mixed Alexa/HomeKit sources.
 
 Raw: `0..255` integer.
 
 Percent: `0..100`, converted to raw `0..255`.
 
 Normalized: `0..1`, converted to raw `0..255`.
+
+HomeKit `{ Brightness: 0..100 }` is always percent regardless of configured input mode. HomeKit `{ On: true }` uses the configured ON level; `{ On: false }` sends zero.
+
+Explicit values `{ value, unit }` override the configured input mode. Supported units are `raw`, `percent`, and `normalized`.
+
+ON level has its own unit and must not depend on the input mode. Preserve legacy behavior when `onLevelMode` is absent by falling back to the configured non-auto input mode, or percent for auto.
 
 Preserve acknowledgement compatibility.
 

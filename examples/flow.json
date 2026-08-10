@@ -57,7 +57,7 @@
     "channelIds": "",
     "acknowledge": true,
     "outputs": 1,
-    "inputMode": "percent",
+    "inputMode": "auto",
     "onLevel": "20",
     "x": 370,
     "y": 140,
@@ -65,7 +65,8 @@
       [
         "debug-commands"
       ]
-    ]
+    ],
+    "onLevelMode": "percent"
   },
   {
     "id": "inject-switch",

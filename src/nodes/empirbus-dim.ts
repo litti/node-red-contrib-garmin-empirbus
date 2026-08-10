@@ -8,10 +8,16 @@ import { EmpirbusToggleAndSwitchNode } from '../types/EmpirbusToggleAndSwitchNod
 import { getResultError } from '../helpers/resultHandling'
 import { resolveAcknowledgeMode, sendAcknowledge } from '../helpers/acknowledge'
 
-type Mode = 'raw' | 'percent' | 'normalized'
-interface Def extends NodeDef { acknowledge?: boolean; acknowledgeMode?: string; channelId?: string; channelIds?: string; channelName?: string; config: string; name: string; inputMode?: Mode; onLevel?: string }
+type ValueMode = 'raw' | 'percent' | 'normalized'
+type InputMode = ValueMode | 'auto'
+interface Def extends NodeDef { acknowledge?: boolean; acknowledgeMode?: string; channelId?: string; channelIds?: string; channelName?: string; config: string; name: string; inputMode?: InputMode; onLevel?: string; onLevelMode?: ValueMode }
 
-const getMaximumValue = (mode: Mode) => {
+type ExplicitDimValue = {
+    unit?: unknown
+    value?: unknown
+}
+
+const getMaximumValue = (mode: ValueMode) => {
     if (mode === 'raw')
         return 255
 
@@ -21,7 +27,7 @@ const getMaximumValue = (mode: Mode) => {
     return 100
 }
 
-const convert = (value: unknown, mode: Mode): { raw: number; brightness: number } => {
+const convert = (value: unknown, mode: ValueMode): { raw: number; brightness: number } => {
     const n = Number(value)
     if (!Number.isFinite(n))
         throw new Error(`Invalid dimmer payload: ${JSON.stringify(value)}`)
@@ -44,6 +50,41 @@ const convert = (value: unknown, mode: Mode): { raw: number; brightness: number 
         throw new Error('Percent dimmer value must be between 0 and 100.')
 
     return { raw: Math.round(n / 100 * 255), brightness: n }
+}
+
+const convertAuto = (value: unknown) => {
+    const n = Number(value)
+    if (!Number.isFinite(n))
+        throw new Error(`Invalid dimmer payload: ${JSON.stringify(value)}`)
+
+    if (n >= 0 && n <= 100)
+        return convert(n, 'percent')
+
+    if (Number.isInteger(n) && n >= 101 && n <= 255)
+        return convert(n, 'raw')
+
+    throw new Error('Auto dimmer value must be between 0 and 100 percent or an integer raw value from 101 to 255.')
+}
+
+const resolveExplicitDimValue = (payload: unknown): { value: unknown; mode: ValueMode } | undefined => {
+    if (!payload || typeof payload !== 'object')
+        return undefined
+
+    const explicit = payload as ExplicitDimValue
+    if (explicit.value === undefined || typeof explicit.unit !== 'string')
+        return undefined
+
+    const unit = explicit.unit.trim().toLowerCase()
+    if (unit === 'raw')
+        return { value: explicit.value, mode: 'raw' }
+
+    if (unit === 'percent' || unit === '%')
+        return { value: explicit.value, mode: 'percent' }
+
+    if (unit === 'normalized' || unit === 'normalised')
+        return { value: explicit.value, mode: 'normalized' }
+
+    throw new Error(`Unsupported dimmer unit: ${explicit.unit}`)
 }
 
 const resolveDimPower = (payload: unknown) => {
@@ -71,19 +112,56 @@ const resolveDimPower = (payload: unknown) => {
     return resolvePower(payload)
 }
 
-const resolveValue = (payload: unknown, mode: Mode, onLevel: number) => {
+const resolveInputValue = (payload: unknown, mode: InputMode) => {
+    const explicit = resolveExplicitDimValue(payload)
+    if (explicit)
+        return convert(explicit.value, explicit.mode)
+
+    const homeKitBrightness = resolveHomeKitBrightness(payload)
+    if (homeKitBrightness !== undefined)
+        return convert(homeKitBrightness, 'percent')
+
+    const dimValue = resolveDimPayload(payload)
+    if (mode === 'auto')
+        return convertAuto(dimValue)
+
+    return convert(dimValue, mode)
+}
+
+const resolveValue = (payload: unknown, mode: InputMode, onLevel: number, onLevelMode: ValueMode) => {
+    const explicit = resolveExplicitDimValue(payload)
+    if (explicit)
+        return convert(explicit.value, explicit.mode)
+
     const homeKitBrightness = resolveHomeKitBrightness(payload)
     if (homeKitBrightness !== undefined)
         return convert(homeKitBrightness, 'percent')
 
     const power = resolveDimPower(payload)
     if (power === 'ON')
-        return convert(onLevel, mode)
+        return convert(onLevel, onLevelMode)
 
     if (power === 'OFF')
-        return convert(0, mode)
+        return convert(0, 'raw')
 
-    return convert(resolveDimPayload(payload), mode)
+    return resolveInputValue(payload, mode)
+}
+
+const resolveInputMode = (value: unknown): InputMode => {
+    if (value === 'auto' || value === 'raw' || value === 'normalized')
+        return value
+
+    return 'percent'
+}
+
+const resolveOnLevelMode = (value: unknown, inputMode: InputMode): ValueMode => {
+    if (value === 'raw' || value === 'percent' || value === 'normalized')
+        return value
+
+    if (inputMode !== 'auto')
+        return inputMode
+
+    return 'percent'
 }
 
 const init: NodeInitializer = RED => {
@@ -96,8 +174,9 @@ const init: NodeInitializer = RED => {
         this.channelIds = config.channelIds || ''
         this.selectedChannelIds = parseChannelIds(this.channelIds)
 
-        const mode: Mode = ['raw', 'normalized'].includes(config.inputMode || '') ? config.inputMode as Mode : 'percent'
-        const configuredOnLevel = config.onLevel === undefined || config.onLevel === '' ? getMaximumValue(mode) : Number(config.onLevel)
+        const mode = resolveInputMode(config.inputMode)
+        const onLevelMode = resolveOnLevelMode(config.onLevelMode, mode)
+        const configuredOnLevel = config.onLevel === undefined || config.onLevel === '' ? getMaximumValue(onLevelMode) : Number(config.onLevel)
         const unsubscribe = bindEmpirbusClientStatus(this, this.configNode)
 
         this.on('close', () => unsubscribe?.())
@@ -111,7 +190,7 @@ const init: NodeInitializer = RED => {
                 if (!ids.length)
                     throw new Error('No matching channel found.')
 
-                const value = resolveValue(msg.payload, mode, configuredOnLevel)
+                const value = resolveValue(msg.payload, mode, configuredOnLevel, onLevelMode)
                 const acknowledgementPayload = { state: { brightness: value.brightness } }
                 sendAcknowledge(acknowledgeMode, 'immediate', msg, send, acknowledgementPayload)
                 const results = ids.map(id => repo.dim(id, value.raw))
