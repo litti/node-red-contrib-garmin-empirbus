@@ -269,3 +269,6 @@ The output contains `direction`, `channelId` when available, `category`, `comman
 Active command nodes support `None`, `Immediately`, and `After execution`. `Immediately` means the command was validated and execution started; it does not mean that a physical state change was confirmed by EmpirBus. Existing flows with `acknowledge: true` and no `acknowledgeMode` are interpreted as `After execution`. The existing acknowledgement message format remains backward compatible.
 
 For switch semantics, both `pulse` and `momentary` channels require a known `onOffStatus`. The Switch node only sends a command when the requested state differs from the last state reported by EmpirBus. This prevents a repeated `ON` request from toggling an already-on pulse channel off. EmpirBus state remains the source of truth.
+
+
+For Alexa state reporting, a power transition emits both the power state and a synthetic brightness state: `ON` reports `brightness: 100`, `OFF` reports `brightness: 0`. Brightness-only changes continue to report the actual brightness value.

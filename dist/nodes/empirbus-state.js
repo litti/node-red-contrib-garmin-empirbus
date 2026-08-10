@@ -5,6 +5,31 @@ const toHomeKitState_1 = require("../helpers/toHomeKitState");
 const toAlexaState_1 = require("../helpers/toAlexaState");
 const parseIds = (value) => Array.from(new Set((value || '').split(',').map(v => Number(v.trim())).filter(Number.isFinite)));
 const stable = (value) => JSON.stringify(value, Object.keys(value).sort());
+const buildAlexaMessage = (endpointId, topic, state) => ({
+    acknowledge: true,
+    endpointId,
+    topic,
+    payload: { state }
+});
+const buildAlexaMessages = (state, previous, endpointId, topic) => {
+    const messages = [];
+    const powerChanged = state.power !== undefined && (!previous || previous.power !== state.power);
+    const brightnessChanged = state.brightness !== undefined && (!previous || previous.brightness !== state.brightness);
+    if (powerChanged) {
+        messages.push(buildAlexaMessage(endpointId, topic, { power: state.power }));
+        messages.push(buildAlexaMessage(endpointId, topic, { brightness: state.power === 'ON' ? 100 : 0 }));
+        return messages;
+    }
+    if (brightnessChanged)
+        messages.push(buildAlexaMessage(endpointId, topic, { brightness: state.brightness }));
+    for (const [key, value] of Object.entries(state)) {
+        if (key === 'power' || key === 'brightness')
+            continue;
+        if (!previous || previous[key] !== value)
+            messages.push(buildAlexaMessage(endpointId, topic, { [key]: value }));
+    }
+    return messages;
+};
 const init = RED => {
     function Constructor(config) {
         RED.nodes.createNode(this, config);
@@ -14,6 +39,7 @@ const init = RED => {
         const fallbackId = Number.isFinite(parsedFallback) ? parsedFallback : undefined;
         const wantedName = config.channelName?.trim().toLowerCase();
         const lastStates = new Map();
+        const lastAlexaStates = new Map();
         let unsubscribeUpdate;
         let closed = false;
         const unsubscribeStatus = (0, bindEmpirbusClientStatus_1.bindEmpirbusClientStatus)(this, configNode, { connectedText: 'listening' });
@@ -47,10 +73,13 @@ const init = RED => {
                 const topic = `empirbus/${endpointId}`;
                 const standardMessage = { acknowledge: true, endpointId, topic, payload: { state } };
                 const alexaState = (0, toAlexaState_1.toAlexaState)(state);
-                const alexaMessage = alexaState ? { acknowledge: true, endpointId, topic, payload: { state: alexaState } } : null;
+                const previousAlexaState = lastAlexaStates.get(channel.id);
+                const alexaMessages = alexaState ? buildAlexaMessages(alexaState, previousAlexaState, endpointId, topic) : [];
+                if (alexaState)
+                    lastAlexaStates.set(channel.id, alexaState);
                 const homeKitState = (0, toHomeKitState_1.toHomeKitState)(state);
                 const homeKitMessage = homeKitState ? { endpointId, topic, payload: homeKitState } : null;
-                this.send([standardMessage, alexaMessage, homeKitMessage]);
+                this.send([standardMessage, alexaMessages.length ? alexaMessages : null, homeKitMessage]);
             });
         }).catch(error => this.error(error));
         this.on('close', () => {

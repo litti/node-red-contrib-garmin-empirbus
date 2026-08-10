@@ -881,3 +881,6 @@ Existing payload formats remain backward compatible.
 ## State node output contract
 
 `EmpirBus State` has exactly three outputs. Output 1 is the backwards-compatible Standard format. Output 2 is an Alexa Smart Home v3 adapter using `msg.payload.state` and `msg.acknowledge = true`. It emits changed Alexa properties as individual messages; for dimmers `power` and `brightness` are reported separately, and the first state after startup emits every available Alexa property once. Output 3 is a HomeKit adapter using `msg.payload.On` and, for dimmers, `msg.payload.Brightness` in the range 0..100. Unsupported target mappings emit no message on the corresponding adapter output. Do not add separate State nodes solely to target Alexa and HomeKit.
+
+
+For Alexa state reporting, a power transition emits both the power state and a synthetic brightness state: `ON` reports `brightness: 100`, `OFF` reports `brightness: 0`. Brightness-only changes continue to report the actual brightness value.

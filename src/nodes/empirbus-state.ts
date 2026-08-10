@@ -13,15 +13,36 @@ type State = Record<string, unknown>
 const parseIds = (value?: string) => Array.from(new Set((value || '').split(',').map(v => Number(v.trim())).filter(Number.isFinite)))
 const stable = (value: State) => JSON.stringify(value, Object.keys(value).sort())
 
-const buildAlexaMessages = (state: State, previous: State | undefined, endpointId: string, topic: string) => {
-    const changedEntries = Object.entries(state).filter(([key, value]) => !previous || previous[key] !== value)
+const buildAlexaMessage = (endpointId: string, topic: string, state: State) => ({
+    acknowledge: true,
+    endpointId,
+    topic,
+    payload: { state }
+})
 
-    return changedEntries.map(([key, value]) => ({
-        acknowledge: true,
-        endpointId,
-        topic,
-        payload: { state: { [key]: value } }
-    }))
+const buildAlexaMessages = (state: State, previous: State | undefined, endpointId: string, topic: string) => {
+    const messages: ReturnType<typeof buildAlexaMessage>[] = []
+    const powerChanged = state.power !== undefined && (!previous || previous.power !== state.power)
+    const brightnessChanged = state.brightness !== undefined && (!previous || previous.brightness !== state.brightness)
+
+    if (powerChanged) {
+        messages.push(buildAlexaMessage(endpointId, topic, { power: state.power }))
+        messages.push(buildAlexaMessage(endpointId, topic, { brightness: state.power === 'ON' ? 100 : 0 }))
+        return messages
+    }
+
+    if (brightnessChanged)
+        messages.push(buildAlexaMessage(endpointId, topic, { brightness: state.brightness }))
+
+    for (const [key, value] of Object.entries(state)) {
+        if (key === 'power' || key === 'brightness')
+            continue
+
+        if (!previous || previous[key] !== value)
+            messages.push(buildAlexaMessage(endpointId, topic, { [key]: value }))
+    }
+
+    return messages
 }
 
 const init: NodeInitializer = RED => {
