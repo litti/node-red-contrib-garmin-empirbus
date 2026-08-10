@@ -25,13 +25,11 @@ const buildAlexaMessages = (state: State, previous: State | undefined, endpointI
     const powerChanged = state.power !== undefined && (!previous || previous.power !== state.power)
     const brightnessChanged = state.brightness !== undefined && (!previous || previous.brightness !== state.brightness)
 
-    if (powerChanged) {
+    if (powerChanged && brightnessChanged)
+        messages.push(buildAlexaMessage(endpointId, topic, { power: state.power, brightness: state.brightness }))
+    else if (powerChanged)
         messages.push(buildAlexaMessage(endpointId, topic, { power: state.power }))
-        messages.push(buildAlexaMessage(endpointId, topic, { brightness: state.power === 'ON' ? 100 : 0 }))
-        return messages
-    }
-
-    if (brightnessChanged)
+    else if (brightnessChanged)
         messages.push(buildAlexaMessage(endpointId, topic, { brightness: state.brightness }))
 
     for (const [key, value] of Object.entries(state)) {
