@@ -3,21 +3,16 @@ const promises_1 = require("node:timers/promises");
 const bindEmpirbusClientStatus_1 = require("../helpers/bindEmpirbusClientStatus");
 const channelHandling_1 = require("../helpers/channelHandling");
 const getRepository_1 = require("../helpers/getRepository");
+const inputPayload_1 = require("../helpers/inputPayload");
 const resultHandling_1 = require("../helpers/resultHandling");
 const acknowledge_1 = require("../helpers/acknowledge");
 const direct = (payload) => {
-    const value = typeof payload === 'object' && payload !== null && 'action' in payload ? payload.action : payload;
-    if (typeof value === 'boolean')
-        return value;
-    if (typeof value === 'number')
-        return value === 1 ? true : value === 0 ? false : undefined;
-    if (typeof value !== 'string')
-        return undefined;
-    const v = value.trim().toLowerCase();
-    if (['press', 'on', 'true', '1'].includes(v))
-        return true;
-    if (['release', 'off', 'false', '0'].includes(v))
-        return false;
+    const action = (0, inputPayload_1.resolveAction)(payload);
+    if (action)
+        return action === 'press';
+    const power = (0, inputPayload_1.resolvePower)(payload);
+    if (power)
+        return power === 'ON';
     return undefined;
 };
 const bounded = (value, min, max, fallback) => {

@@ -72,6 +72,16 @@ Je nach Kanal kann `msg.payload.state` unter anderem enthalten:
 
 Nach jedem Deploy oder Neustart wird der erste empfangene Zustand jedes relevanten Kanals immer ausgegeben. Anschließend werden identische Zustände unterdrückt.
 
+### HomeKit-Kompatibilität
+
+Die Steuer-Nodes verstehen zusätzlich typische Payloads von `node-red-contrib-homekit-bridged`, sodass für einfache HomeKit-Anbindungen keine Function-Nodes zur Formatkonvertierung erforderlich sind.
+
+- `EmpirBus Switch`: `{ On: true }` / `{ On: false }` werden als ON/OFF interpretiert.
+- `EmpirBus Dimmer`: `{ Brightness: 0..100 }` wird unabhängig vom konfigurierten Input-Format als Prozentwert interpretiert. `{ On: true }` verwendet den konfigurierten ON-Level, `{ On: false }` setzt auf 0.
+- `EmpirBus Button` im Modus `Direct`: `{ On: true }` entspricht PRESS, `{ On: false }` entspricht RELEASE.
+
+Die bestehenden Eingabeformate bleiben vollständig unterstützt. HomeKit-Thermostatwerte wie `TargetTemperature` und `TargetHeatingCoolingState` werden bewusst nicht automatisch auf EmpirBus-Funktionen abgebildet.
+
 ### EmpirBus Switch
 
 Setzt einen Kanal auf den gewünschten Ein-/Aus-Zustand. Der Node erkennt anhand der zuletzt empfangenen MFD-Statusmeldung automatisch, ob der Kanal in EmpirBus als Pulse/Switch oder als Momentary-Kanal arbeitet.
@@ -179,6 +189,16 @@ Das Format bestehender Acknowledge-Nachrichten wird aus Kompatibilitätsgründen
 Ein importierbarer Beispiel-Flow liegt unter [`examples/flow.json`](examples/flow.json). Er enthält Beispiele für State, Switch, Button, Dimmer, Toggle und Debug. Der EmpirBus-Debug-Node ist dort direkt mit einem normalen Node-RED-Debug-Node verbunden. Die verwendeten Channel IDs sind Beispiele und müssen an die eigene EmpirBus-Konfiguration angepasst werden.
 
 ## English
+
+### HomeKit compatibility
+
+The control nodes also accept common payloads from `node-red-contrib-homekit-bridged`, so simple HomeKit integrations do not need Function nodes for payload conversion.
+
+- `EmpirBus Switch`: `{ On: true }` / `{ On: false }` are interpreted as ON/OFF.
+- `EmpirBus Dimmer`: `{ Brightness: 0..100 }` is always interpreted as percent, independent of the configured input format. `{ On: true }` uses the configured ON level and `{ On: false }` sets 0.
+- `EmpirBus Button` in `Direct` mode: `{ On: true }` means PRESS and `{ On: false }` means RELEASE.
+
+Existing input formats remain supported. HomeKit thermostat values such as `TargetTemperature` and `TargetHeatingCoolingState` are intentionally not mapped automatically.
 
 ### Installation
 

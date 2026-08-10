@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.resolveDimPayload = exports.resolveAction = exports.resolvePower = void 0;
+exports.resolveDimPayload = exports.resolveHomeKitBrightness = exports.resolveAction = exports.resolvePower = void 0;
 const isObject = (value) => value !== null && typeof value === 'object';
 const getState = (payload) => {
     if (!isObject(payload) || !isObject(payload.state))
@@ -9,7 +9,7 @@ const getState = (payload) => {
 };
 const resolvePower = (payload) => {
     const state = getState(payload);
-    const value = state?.power ?? (isObject(payload) ? payload.power : payload);
+    const value = state?.power ?? (isObject(payload) ? payload.power ?? payload.On : payload);
     if (typeof value === 'boolean')
         return (value ? 'ON' : 'OFF');
     if (typeof value === 'number') {
@@ -48,6 +48,15 @@ const resolveAction = (payload) => {
     return undefined;
 };
 exports.resolveAction = resolveAction;
+const resolveHomeKitBrightness = (payload) => {
+    if (!isObject(payload) || payload.Brightness === undefined)
+        return undefined;
+    const brightness = Number(payload.Brightness);
+    if (!Number.isFinite(brightness) || brightness < 0 || brightness > 100)
+        throw new Error('HomeKit Brightness must be between 0 and 100.');
+    return brightness;
+};
+exports.resolveHomeKitBrightness = resolveHomeKitBrightness;
 const resolveDimPayload = (payload) => {
     const state = getState(payload);
     if (state) {
@@ -61,6 +70,8 @@ const resolveDimPayload = (payload) => {
             return state.power;
     }
     if (isObject(payload)) {
+        if (payload.Brightness !== undefined)
+            return payload.Brightness;
         if (payload.brightness !== undefined)
             return payload.brightness;
         if (payload.percentage !== undefined)
@@ -69,8 +80,9 @@ const resolveDimPayload = (payload) => {
             return payload.rangeValue;
         if (payload.power !== undefined)
             return payload.power;
+        if (payload.On !== undefined)
+            return payload.On;
     }
     return payload;
 };
 exports.resolveDimPayload = resolveDimPayload;
-//# sourceMappingURL=inputPayload.js.map

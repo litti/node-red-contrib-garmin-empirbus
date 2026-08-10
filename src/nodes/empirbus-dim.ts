@@ -1,7 +1,7 @@
 import type { NodeDef, NodeInitializer } from 'node-red'
 import { bindEmpirbusClientStatus } from '../helpers/bindEmpirbusClientStatus'
 import { parseChannelIds, resolveChannelIds } from '../helpers/channelHandling'
-import { resolveDimPayload, resolvePower } from '../helpers/inputPayload'
+import { resolveDimPayload, resolveHomeKitBrightness, resolvePower } from '../helpers/inputPayload'
 import { getRepository } from '../helpers/getRepository'
 import { EmpirbusConfigNode } from '../types/EmpirbusConfigNode'
 import { EmpirbusToggleAndSwitchNode } from '../types/EmpirbusToggleAndSwitchNode'
@@ -64,14 +64,18 @@ const resolveDimPower = (payload: unknown) => {
     if (!payload || typeof payload !== 'object')
         return undefined
 
-    const value = payload as { power?: unknown; state?: { power?: unknown } }
-    if (value.power === undefined && value.state?.power === undefined)
+    const value = payload as { On?: unknown; power?: unknown; state?: { power?: unknown } }
+    if (value.On === undefined && value.power === undefined && value.state?.power === undefined)
         return undefined
 
     return resolvePower(payload)
 }
 
 const resolveValue = (payload: unknown, mode: Mode, onLevel: number) => {
+    const homeKitBrightness = resolveHomeKitBrightness(payload)
+    if (homeKitBrightness !== undefined)
+        return convert(homeKitBrightness, 'percent')
+
     const power = resolveDimPower(payload)
     if (power === 'ON')
         return convert(onLevel, mode)

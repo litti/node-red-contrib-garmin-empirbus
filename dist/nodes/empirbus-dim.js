@@ -44,11 +44,14 @@ const resolveDimPower = (payload) => {
     if (!payload || typeof payload !== 'object')
         return undefined;
     const value = payload;
-    if (value.power === undefined && value.state?.power === undefined)
+    if (value.On === undefined && value.power === undefined && value.state?.power === undefined)
         return undefined;
     return (0, inputPayload_1.resolvePower)(payload);
 };
 const resolveValue = (payload, mode, onLevel) => {
+    const homeKitBrightness = (0, inputPayload_1.resolveHomeKitBrightness)(payload);
+    if (homeKitBrightness !== undefined)
+        return convert(homeKitBrightness, 'percent');
     const power = resolveDimPower(payload);
     if (power === 'ON')
         return convert(onLevel, mode);

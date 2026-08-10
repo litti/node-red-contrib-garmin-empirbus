@@ -23,6 +23,8 @@ RED.nodes.registerType('empirbus-dim',{category:'garmin-empirbus',color:'#a6bbcf
 <p>Ungültige Werte werden abgelehnt und nicht still auf den erlaubten Bereich begrenzt.</p>
 <p>Der Wert kann direkt in <code>msg.payload</code> oder in einem vom State-Format unterstützten verschachtelten Wert stehen.</p>
 <p>Mehrere Kanäle werden unterstützt. Eine dynamische Channel ID kann über <code>msg.topic = "empirbus/&lt;id&gt;"</code> angegeben werden.</p>
+<p><b>HomeKit</b></p>
+<p><code>{ Brightness: 0..100 }</code> wird immer als Prozentwert interpretiert, unabhängig vom gewählten Input-Format. <code>{ On: true }</code> verwendet den konfigurierten ON-Level, <code>{ On: false }</code> setzt auf 0.</p>
 <p><b>Acknowledge</b></p>
 <p>Ist Acknowledge aktiviert, wird der gesetzte Helligkeitswert als kompatible Bestätigung ausgegeben. Ohne Acknowledge besitzt der Node keinen Ausgang.</p>
 <h3>English</h3>
@@ -34,6 +36,8 @@ RED.nodes.registerType('empirbus-dim',{category:'garmin-empirbus',color:'#a6bbcf
 <p>Invalid values are rejected and are not silently clamped.</p>
 <p>The value can be supplied directly in <code>msg.payload</code> or in a nested value supported by the state-compatible input parser.</p>
 <p>Multiple channels are supported. A dynamic channel ID can be supplied with <code>msg.topic = "empirbus/&lt;id&gt;"</code>.</p>
+<p><b>HomeKit</b></p>
+<p><code>{ Brightness: 0..100 }</code> is always interpreted as percent, independent of the selected input format. <code>{ On: true }</code> uses the configured ON level and <code>{ On: false }</code> sets 0.</p>
 <p><b>Acknowledge</b></p>
 <p>Acknowledge can be disabled, emitted immediately after validation/start, or emitted after successful execution.</p>
 </script>

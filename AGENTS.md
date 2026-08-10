@@ -230,3 +230,14 @@ For changes:
 Active command nodes support `None`, `Immediately`, and `After execution`. `Immediately` means the command was validated and execution started; it does not mean that a physical state change was confirmed by EmpirBus. Existing flows with `acknowledge: true` and no `acknowledgeMode` are interpreted as `After execution`. The existing acknowledgement message format remains backward compatible.
 
 For switch semantics, both `pulse` and `momentary` channels require a known `onOffStatus`. The Switch node only sends a command when the requested state differs from the last state reported by EmpirBus. This prevents a repeated `ON` request from toggling an already-on pulse channel off. EmpirBus state remains the source of truth.
+
+## HomeKit input compatibility
+
+Preserve direct compatibility with common `node-red-contrib-homekit-bridged` payloads:
+
+- Switch: `{ On: boolean }` maps to ON/OFF.
+- Dimmer: `{ Brightness: number }` is percent 0..100 regardless of configured input mode; `{ On: boolean }` maps to ON/OFF and uses the configured ON level for ON.
+- Button Direct: `{ On: boolean }` maps to press/release.
+- Do not infer thermostat behavior from `TargetTemperature` or `TargetHeatingCoolingState`; those require explicit domain mapping.
+
+Existing payload formats remain backward compatible.

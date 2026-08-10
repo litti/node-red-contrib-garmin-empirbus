@@ -2,6 +2,8 @@ import type { SwitchState } from 'garmin-empirbus-ts'
 
 type PayloadObject = {
     action?: unknown
+    Brightness?: unknown
+    On?: unknown
     brightness?: unknown
     percentage?: unknown
     power?: unknown
@@ -27,7 +29,7 @@ const getState = (payload: unknown): PayloadObject['state'] | undefined => {
 
 export const resolvePower = (payload: unknown): SwitchState | undefined => {
     const state = getState(payload)
-    const value = state?.power ?? (isObject(payload) ? payload.power : payload)
+    const value = state?.power ?? (isObject(payload) ? payload.power ?? payload.On : payload)
 
     if (typeof value === 'boolean')
         return (value ? 'ON' : 'OFF') as SwitchState
@@ -78,6 +80,18 @@ export const resolveAction = (payload: unknown): 'press' | 'release' | undefined
     return undefined
 }
 
+export const resolveHomeKitBrightness = (payload: unknown): number | undefined => {
+    if (!isObject(payload) || payload.Brightness === undefined)
+        return undefined
+
+    const brightness = Number(payload.Brightness)
+
+    if (!Number.isFinite(brightness) || brightness < 0 || brightness > 100)
+        throw new Error('HomeKit Brightness must be between 0 and 100.')
+
+    return brightness
+}
+
 export const resolveDimPayload = (payload: unknown): unknown => {
     const state = getState(payload)
 
@@ -96,6 +110,9 @@ export const resolveDimPayload = (payload: unknown): unknown => {
     }
 
     if (isObject(payload)) {
+        if (payload.Brightness !== undefined)
+            return payload.Brightness
+
         if (payload.brightness !== undefined)
             return payload.brightness
 
@@ -107,6 +124,9 @@ export const resolveDimPayload = (payload: unknown): unknown => {
 
         if (payload.power !== undefined)
             return payload.power
+
+        if (payload.On !== undefined)
+            return payload.On
     }
 
     return payload

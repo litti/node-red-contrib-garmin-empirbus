@@ -3,6 +3,7 @@ import { setTimeout as sleep } from 'node:timers/promises'
 import { bindEmpirbusClientStatus } from '../helpers/bindEmpirbusClientStatus'
 import { parseChannelIds, resolveChannelIds } from '../helpers/channelHandling'
 import { getRepository } from '../helpers/getRepository'
+import { resolveAction, resolvePower } from '../helpers/inputPayload'
 import { EmpirbusConfigNode } from '../types/EmpirbusConfigNode'
 import { EmpirbusToggleAndSwitchNode } from '../types/EmpirbusToggleAndSwitchNode'
 import { getResultError } from '../helpers/resultHandling'
@@ -12,13 +13,14 @@ type Mode = 'short' | 'long' | 'direct'
 type Execution = 'sequential' | 'parallel'
 interface Def extends NodeDef { acknowledge?: boolean; acknowledgeMode?: string; channelId?: string; channelIds?: string; channelName?: string; config: string; name: string; mode?: Mode; durationMs?: string|number; execution?: Execution; channelDelayMs?: string|number }
 const direct = (payload: unknown): boolean | undefined => {
-    const value = typeof payload === 'object' && payload !== null && 'action' in payload ? (payload as any).action : payload
-    if (typeof value === 'boolean') return value
-    if (typeof value === 'number') return value === 1 ? true : value === 0 ? false : undefined
-    if (typeof value !== 'string') return undefined
-    const v = value.trim().toLowerCase()
-    if (['press','on','true','1'].includes(v)) return true
-    if (['release','off','false','0'].includes(v)) return false
+    const action = resolveAction(payload)
+    if (action)
+        return action === 'press'
+
+    const power = resolvePower(payload)
+    if (power)
+        return power === 'ON'
+
     return undefined
 }
 const bounded = (value: unknown, min: number, max: number, fallback: number) => {

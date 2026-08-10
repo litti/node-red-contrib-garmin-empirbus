@@ -20,6 +20,8 @@ RED.nodes.registerType('empirbus-switch',{category:'garmin-empirbus',color:'#a6b
 <p>Pulse-Kanäle erhalten einen expliziten Ein-/Aus-Befehl. Momentary-Kanäle erhalten nur dann einen 150-ms-Tastendruck, wenn der gewünschte Zustand vom zuletzt gemeldeten Zustand abweicht. Ist Typ oder Zustand noch unbekannt, wird nichts gesendet.</p>
 <p><b>Kanäle</b></p>
 <p>Mehrere ausgewählte Kanäle werden gemeinsam geschaltet. Eine dynamische Channel ID kann über <code>msg.topic = "empirbus/&lt;id&gt;"</code> übergeben werden.</p>
+<p><b>HomeKit</b></p>
+<p>Zusätzlich werden <code>{ On: true }</code> und <code>{ On: false }</code> direkt als ON/OFF verstanden.</p>
 <p><b>Acknowledge</b></p>
 <p>Ist Acknowledge aktiviert, wird nach erfolgreicher Verarbeitung eine kompatible Bestätigungsnachricht am Ausgang ausgegeben. Ohne Acknowledge besitzt der Node keinen Ausgang.</p>
 <h3>English</h3>
@@ -29,6 +31,8 @@ RED.nodes.registerType('empirbus-switch',{category:'garmin-empirbus',color:'#a6b
 <p>Pulse channels receive an explicit ON/OFF command. Momentary channels receive a 150 ms press only when the requested state differs from the last reported state. Nothing is sent while type or required state is unknown.</p>
 <p><b>Channels</b></p>
 <p>Multiple selected channels are switched together. A dynamic channel ID can be supplied with <code>msg.topic = "empirbus/&lt;id&gt;"</code>.</p>
+<p><b>HomeKit</b></p>
+<p><code>{ On: true }</code> and <code>{ On: false }</code> are also accepted directly as ON/OFF.</p>
 <p><b>Acknowledge</b></p>
 <p>Acknowledge can be disabled, emitted immediately after validation/start, or emitted after successful execution.</p>
 </script>
