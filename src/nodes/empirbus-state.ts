@@ -3,6 +3,7 @@ import type { Channel, EmpirBusChannelRepository } from 'garmin-empirbus-ts'
 import type { EmpirbusConfigNode } from '../types/EmpirbusConfigNode'
 import { deriveChannelState } from '../helpers/deriveChannelState'
 import { bindEmpirbusClientStatus } from '../helpers/bindEmpirbusClientStatus'
+import { toHomeKitState } from '../helpers/toHomeKitState'
 
 type Unsubscribe = () => void
 interface Def extends NodeDef { name: string; config: string; channelIds?: string; channelId?: string; channelName?: string }
@@ -30,23 +31,42 @@ const init: NodeInitializer = RED => {
         }
 
         const relevant = (channel: Channel) => {
-            if (wantedIds.length) return wantedIds.includes(channel.id)
-            if (fallbackId !== undefined) return channel.id === fallbackId
-            if (wantedName) return (channel.name || '').trim().toLowerCase() === wantedName
+            if (wantedIds.length)
+                return wantedIds.includes(channel.id)
+
+            if (fallbackId !== undefined)
+                return channel.id === fallbackId
+
+            if (wantedName)
+                return (channel.name || '').trim().toLowerCase() === wantedName
+
             return true
         }
 
         configNode.getRepository().then((repo: EmpirBusChannelRepository) => {
-            if (closed) return
+            if (closed)
+                return
+
             unsubscribeUpdate = repo.onUpdate((channel: Channel) => {
-                if (closed || !relevant(channel)) return
+                if (closed || !relevant(channel))
+                    return
+
                 const state = deriveChannelState(channel)
-                if (!state) return
+                if (!state)
+                    return
+
                 const serialized = stable(state)
-                if (lastStates.get(channel.id) === serialized) return
+                if (lastStates.get(channel.id) === serialized)
+                    return
+
                 lastStates.set(channel.id, serialized)
                 const endpointId = String(channel.id)
-                this.send({ acknowledge: true, endpointId, topic: `empirbus/${endpointId}`, payload: { state } })
+                const topic = `empirbus/${endpointId}`
+                const standardMessage = { acknowledge: true, endpointId, topic, payload: { state } }
+                const homeKitState = toHomeKitState(state)
+                const homeKitMessage = homeKitState ? { endpointId, topic, payload: homeKitState } : null
+
+                this.send([standardMessage, homeKitMessage])
             })
         }).catch(error => this.error(error))
 
@@ -57,6 +77,8 @@ const init: NodeInitializer = RED => {
             this.status({})
         })
     }
+
     RED.nodes.registerType('empirbus-state', Constructor)
 }
+
 export = init

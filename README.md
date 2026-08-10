@@ -72,6 +72,9 @@ Je nach Kanal kann `msg.payload.state` unter anderem enthalten:
 
 Nach jedem Deploy oder Neustart wird der erste empfangene Zustand jedes relevanten Kanals immer ausgegeben. Anschließend werden identische Zustände unterdrückt.
 
+
+Der State-Node besitzt zwei feste Ausgänge. Ausgang 1 liefert das bestehende Standardformat und ist direkt mit `alexa-smart-home-v3-state` kompatibel. Ausgang 2 liefert HomeKit-kompatible Payloads. Ein Dimmer wird beispielsweise gleichzeitig als `{ state: { power: "ON", brightness: 95, percentage: 95 } }` am ersten Ausgang und als `{ On: true, Brightness: 95 }` am zweiten Ausgang ausgegeben. Für HomeKit nicht abbildbare Zustände erzeugen am zweiten Ausgang keine Nachricht.
+
 ### HomeKit-Kompatibilität
 
 Die Steuer-Nodes verstehen zusätzlich typische Payloads von `node-red-contrib-homekit-bridged`, sodass für einfache HomeKit-Anbindungen keine Function-Nodes zur Formatkonvertierung erforderlich sind.

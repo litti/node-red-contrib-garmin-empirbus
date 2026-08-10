@@ -1,6 +1,7 @@
 "use strict";
 const deriveChannelState_1 = require("../helpers/deriveChannelState");
 const bindEmpirbusClientStatus_1 = require("../helpers/bindEmpirbusClientStatus");
+const toHomeKitState_1 = require("../helpers/toHomeKitState");
 const parseIds = (value) => Array.from(new Set((value || '').split(',').map(v => Number(v.trim())).filter(Number.isFinite)));
 const stable = (value) => JSON.stringify(value, Object.keys(value).sort());
 const init = RED => {
@@ -42,7 +43,11 @@ const init = RED => {
                     return;
                 lastStates.set(channel.id, serialized);
                 const endpointId = String(channel.id);
-                this.send({ acknowledge: true, endpointId, topic: `empirbus/${endpointId}`, payload: { state } });
+                const topic = `empirbus/${endpointId}`;
+                const standardMessage = { acknowledge: true, endpointId, topic, payload: { state } };
+                const homeKitState = (0, toHomeKitState_1.toHomeKitState)(state);
+                const homeKitMessage = homeKitState ? { endpointId, topic, payload: homeKitState } : null;
+                this.send([standardMessage, homeKitMessage]);
             });
         }).catch(error => this.error(error));
         this.on('close', () => {
@@ -55,4 +60,3 @@ const init = RED => {
     RED.nodes.registerType('empirbus-state', Constructor);
 };
 module.exports = init;
-//# sourceMappingURL=empirbus-state.js.map

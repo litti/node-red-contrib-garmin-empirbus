@@ -70,7 +70,8 @@
             channelIds: { value: '', required: false }
         },
         inputs: 0,
-        outputs: 1,
+        outputs: 2,
+        outputLabels: ['Standard / Alexa', 'HomeKit'],
         icon: 'empirbus-state.svg',
         label() {
             return this.name || 'EmpirBus State'
@@ -91,19 +92,23 @@
 
 <script type="text/x-red" data-help-name="empirbus-state">
 <h3>Deutsch</h3>
-<p>Empfängt Statusänderungen von EmpirBus-Kanälen und gibt sie als normalisierten Node-RED-State aus.</p>
+<p>Empfängt Statusänderungen von EmpirBus-Kanälen und stellt denselben Zustand gleichzeitig in zwei Formaten bereit.</p>
 <p><b>Kanalauswahl</b></p>
 <p>Ausgewählte Kanal-Checkboxen haben Vorrang. Ohne Auswahl kann nach einzelner Channel ID oder Channel Name gefiltert werden. Sind keine Filter gesetzt, werden alle empfangenen Kanäle ausgegeben.</p>
-<p><b>Ausgang</b></p>
-<p><code>msg.topic</code> hat das Format <code>empirbus/&lt;id&gt;</code>. Der normalisierte Zustand steht in <code>msg.payload.state</code>. Je nach Kanal kann dieser z. B. <code>power</code>, <code>brightness</code>, <code>percentage</code>, <code>temperature</code>, <code>thermostatSetPoint</code> oder <code>rangeValue</code> enthalten.</p>
+<p><b>Ausgang 1 – Standard / Alexa</b></p>
+<p><code>msg.topic</code> hat das Format <code>empirbus/&lt;id&gt;</code>. Der normalisierte Zustand steht in <code>msg.payload.state</code>. Dieses Format ist direkt für <code>alexa-smart-home-v3-state</code> geeignet. Dimmer enthalten gemeinsam <code>power</code>, <code>brightness</code> und <code>percentage</code>.</p>
+<p><b>Ausgang 2 – HomeKit</b></p>
+<p>Schaltzustände werden als <code>{ On: true|false }</code> ausgegeben. Dimmer werden als <code>{ On: true|false, Brightness: 0..100 }</code> ausgegeben und können direkt in einen passenden HomeKit-Service eingespeist werden. Für Zustände ohne unterstützte HomeKit-Abbildung wird an diesem Ausgang keine Nachricht erzeugt.</p>
 <p>Der erste empfangene Zustand wird nach jedem Deploy oder Neustart immer ausgegeben. Danach werden identische Zustände unterdrückt.</p>
-<p><code>msg.acknowledge = true</code> bleibt aus Kompatibilitätsgründen Bestandteil der State-Nachrichten.</p>
+<p><code>msg.acknowledge = true</code> bleibt am Standard-/Alexa-Ausgang aus Kompatibilitätsgründen Bestandteil der State-Nachrichten.</p>
 <h3>English</h3>
-<p>Receives EmpirBus channel state changes and emits a normalized Node-RED state.</p>
+<p>Receives EmpirBus channel state changes and emits the same state simultaneously in two formats.</p>
 <p><b>Channel selection</b></p>
 <p>Selected channel checkboxes take precedence. Without a selection, a single Channel ID or Channel Name can be used as a filter. With no filter, all received channels are emitted.</p>
-<p><b>Output</b></p>
-<p><code>msg.topic</code> uses <code>empirbus/&lt;id&gt;</code>. The normalized state is available in <code>msg.payload.state</code>. Depending on the channel it may contain values such as <code>power</code>, <code>brightness</code>, <code>percentage</code>, <code>temperature</code>, <code>thermostatSetPoint</code> or <code>rangeValue</code>.</p>
+<p><b>Output 1 – Standard / Alexa</b></p>
+<p><code>msg.topic</code> uses <code>empirbus/&lt;id&gt;</code>. The normalized state is available in <code>msg.payload.state</code>. This format can be connected directly to <code>alexa-smart-home-v3-state</code>. Dimmer states contain <code>power</code>, <code>brightness</code> and <code>percentage</code> together.</p>
+<p><b>Output 2 – HomeKit</b></p>
+<p>Power states are emitted as <code>{ On: true|false }</code>. Dimmer states are emitted as <code>{ On: true|false, Brightness: 0..100 }</code> and can be connected directly to a matching HomeKit service. No message is emitted on this output for states without a supported HomeKit mapping.</p>
 <p>The first received state is always emitted after each deploy or restart. Identical states are then suppressed.</p>
-<p><code>msg.acknowledge = true</code> remains part of state messages for compatibility.</p>
+<p><code>msg.acknowledge = true</code> remains part of messages on the Standard/Alexa output for compatibility.</p>
 </script>

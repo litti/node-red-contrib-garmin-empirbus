@@ -62,7 +62,19 @@ const buildBrightness = (channel) => {
     const value = decodedPercent ?? rawPercent;
     if (value === undefined || value < 0 || value > 100)
         return null;
-    return { brightness: Math.round(value), percentage: value };
+    const state = {
+        brightness: Math.round(value),
+        percentage: value
+    };
+    if (typeof channel.onOffStatus === 'boolean')
+        state.power = toPower(channel.onOffStatus);
+    if (typeof channel.unavailable === 'boolean')
+        state.unavailable = channel.unavailable;
+    if (typeof channel.error1 === 'boolean')
+        state.error1 = channel.error1;
+    if (typeof channel.error2 === 'boolean')
+        state.error2 = channel.error2;
+    return state;
 };
 const buildPercentage = (channel) => {
     const percent = parsePercent(channel.decodedValue);
