@@ -390,14 +390,14 @@ __metadata:
   languageName: node
   linkType: hard
 
-"garmin-empirbus-ts@npm:^0.1.31":
-  version: 0.1.31
-  resolution: "garmin-empirbus-ts@npm:0.1.31"
+"garmin-empirbus-ts@npm:^0.1.32":
+  version: 0.1.32
+  resolution: "garmin-empirbus-ts@npm:0.1.32"
   dependencies:
     blessed: "npm:^0.1.81"
     ws: "npm:^8.19.0"
     yargs: "npm:17"
-  checksum: 10c0/28f0695756dc055496b99b17bd1ccdde16d2ce985f6bcce8ec11e96dd882ff1d9fbf9ba7eb350ec760304b5c6769344b91e259e27a1bb42a2532dfa192e65323
+  checksum: 10c0/3976a9d17f0794ee91c2abc793718641880b0c0b68ad18c865789fb6c1dc1f83fd0ee1d786d0446f64583bf82c08c1b6541e6077bd4ca544c3573241c8686873
   languageName: node
   linkType: hard
 
@@ -508,7 +508,7 @@ __metadata:
     "@types/node-red__editor-api": "npm:^1.3.5"
     copyfiles: "npm:^2.4.1"
     dotenv-cli: "npm:^11.0.0"
-    garmin-empirbus-ts: "npm:^0.1.31"
+    garmin-empirbus-ts: "npm:^0.1.32"
     typescript: "npm:^5.9.3"
     yargs: "npm:17"
   languageName: unknown
