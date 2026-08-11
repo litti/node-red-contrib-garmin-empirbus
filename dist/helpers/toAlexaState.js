@@ -30,3 +30,4 @@ const toAlexaState = (state) => {
     return null;
 };
 exports.toAlexaState = toAlexaState;
+//# sourceMappingURL=toAlexaState.js.map

@@ -1,3 +1,4 @@
+"use strict";
 (() => {
     const controlsSelectors = {
         masterCheckboxSelector: '.empirbus-channel-master-checkbox',
@@ -207,12 +208,13 @@
         return `${value.slice(0, maxLength - 1).trimEnd()}…`;
     };
     const channelLabel = (node, fallback) => {
-        if (node.name?.trim())
+        var _a, _b;
+        if ((_a = node.name) === null || _a === void 0 ? void 0 : _a.trim())
             return node.name.trim();
         const storedLabels = parseChannelLabels(node.channelLabels);
         if (storedLabels.length > 0)
             return shortenLabel(storedLabels.join(' + '));
-        if (node.channelName?.trim())
+        if ((_b = node.channelName) === null || _b === void 0 ? void 0 : _b.trim())
             return node.channelName.trim();
         const ids = toSelectedIds(node.channelIds);
         if (ids.length > 0)
@@ -238,7 +240,8 @@
             return;
         editorWindow.EmpirbusEditorConfigAutoAssignmentRegistered = true;
         editorWindow.RED.events.on('nodes:add', node => {
-            if (!node.type?.startsWith('empirbus-') || node.type === 'empirbus-config')
+            var _a;
+            if (!((_a = node.type) === null || _a === void 0 ? void 0 : _a.startsWith('empirbus-')) || node.type === 'empirbus-config')
                 return;
             if (!assignSingleConfig(node))
                 return;

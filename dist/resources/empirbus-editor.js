@@ -1,3 +1,4 @@
+"use strict";
 (() => {
     const controlsSelectors = {
         masterCheckboxSelector: '.empirbus-channel-master-checkbox',
@@ -289,3 +290,4 @@
         channelLabel
     };
 })();
+//# sourceMappingURL=empirbus-editor.js.map

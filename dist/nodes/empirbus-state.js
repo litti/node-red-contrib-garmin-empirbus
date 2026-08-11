@@ -91,3 +91,4 @@ const init = RED => {
     RED.nodes.registerType('empirbus-state', Constructor);
 };
 module.exports = init;
+//# sourceMappingURL=empirbus-state.js.map
